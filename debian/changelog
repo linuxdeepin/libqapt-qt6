@@ -1,4 +1,4 @@
-libqapt (3.0.5.3-deepin1) unstable; urgency=medium
+libqapt (3.0.5.2-deepin3) unstable; urgency=medium
 
   * fix: sync long description patch
     - Add patch 0004-fix-long-description-error.patch

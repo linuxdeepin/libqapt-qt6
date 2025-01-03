@@ -804,7 +804,11 @@ bool Backend::xapianIndexNeedsUpdate() const
     // If the cache has been modified after the xapian timestamp, we need to rebuild
     QDateTime aptCacheTime = QFileInfo(d->config->findFile("Dir::Cache::pkgcache")).lastModified();
 
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
     return ((d->xapianTimeStamp < aptCacheTime.toTime_t()) || (!d->xapianIndexExists));
+#else
+    return ((d->xapianTimeStamp < aptCacheTime.toSecsSinceEpoch()) || (!d->xapianIndexExists));
+#endif
 }
 
 bool Backend::openXapianIndex()
@@ -812,7 +816,11 @@ bool Backend::openXapianIndex()
     Q_D(Backend);
 
     QFileInfo timeStamp(QLatin1String("/var/lib/apt-xapian-index/update-timestamp"));
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
     d->xapianTimeStamp = timeStamp.lastModified().toTime_t();
+#else
+    d->xapianTimeStamp = timeStamp.lastModified().toSecsSinceEpoch();
+#endif
 
     if(d->xapianDatabase) {
         delete d->xapianDatabase;

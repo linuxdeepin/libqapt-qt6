@@ -1,3 +1,8 @@
+cmake_minimum_required(VERSION 3.7)
+
+set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTORCC ON)
+
 set(qapt_SRCS
     backend.cpp
     cache.cpp
@@ -13,6 +18,20 @@ set(qapt_SRCS
     sourceentry.cpp
     sourceslist.cpp)
 
+set(qt_required_components Core DBus Widgets)
+
+if (QT_DESIRED_VERSION MATCHES 6)
+    list(APPEND qt_required_components Core5Compat)
+endif()
+
+find_package(Qt${QT_DESIRED_VERSION} REQUIRED COMPONENTS ${qt_required_components})
+find_package(PolkitQt${QT_DESIRED_VERSION}-1)
+
+set(LINK_LIBS
+    Qt${QT_DESIRED_VERSION}::Core
+    Qt${QT_DESIRED_VERSION}::Widgets
+)
+
 add_subdirectory(worker)
 
 set_property(SOURCE ${CMAKE_CURRENT_BINARY_DIR}/worker/${QAPT_WORKER_RDN_VERSIONED}.transaction.xml
@@ -24,22 +43,40 @@ set_property(SOURCE ${CMAKE_CURRENT_BINARY_DIR}/worker/${QAPT_WORKER_RDN_VERSION
         NO_NAMESPACE 1
 )
 
-message(WARNING "terrible use of transaction xml file")
-qt5_add_dbus_interface(qapt_SRCS
+if (QT_DESIRED_VERSION MATCHES 6)
+    list(APPEND LINK_LIBS Qt${QT_DESIRED_VERSION}::Core5Compat)
+
+    message(WARNING "Qt6 terrible use of transaction xml file")
+    qt_add_dbus_interface(qapt_SRCS
                        ${CMAKE_CURRENT_BINARY_DIR}/worker/${QAPT_WORKER_RDN_VERSIONED}.transaction.xml
                        transactioninterface_p)
+
+    message(WARNING "Qt6 terrible use of  worker xml file")
+    qt_add_dbus_interface(qapt_SRCS
+                            ${CMAKE_CURRENT_BINARY_DIR}/worker/${QAPT_WORKER_RDN_VERSIONED}.xml
+                            workerinterface_p)
+
+else()
+    message(WARNING "terrible use of transaction xml file")
+    qt5_add_dbus_interface(qapt_SRCS
+                        ${CMAKE_CURRENT_BINARY_DIR}/worker/${QAPT_WORKER_RDN_VERSIONED}.transaction.xml
+                        transactioninterface_p)
+
+    message(WARNING "terrible use of  worker xml file")
+    qt5_add_dbus_interface(qapt_SRCS
+                        ${CMAKE_CURRENT_BINARY_DIR}/worker/${QAPT_WORKER_RDN_VERSIONED}.xml
+                        workerinterface_p)
+endif()
 
 set_property(SOURCE ${CMAKE_CURRENT_BINARY_DIR}/worker/${QAPT_WORKER_RDN_VERSIONED}.xml
     APPEND PROPERTY
         NO_NAMESPACE 1
 )
 
-message(WARNING "terrible use of  worker xml file")
-qt5_add_dbus_interface(qapt_SRCS
-                       ${CMAKE_CURRENT_BINARY_DIR}/worker/${QAPT_WORKER_RDN_VERSIONED}.xml
-                       workerinterface_p)
-
 configure_file(dbusinterfaces_p.h.cmake ${CMAKE_CURRENT_BINARY_DIR}/dbusinterfaces_p.h)
+
+include_directories(${CMAKE_CURRENT_BINARY_DIR})
+include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 add_library(QApt SHARED ${qapt_SRCS})
 add_library(QApt::Main ALIAS QApt)
@@ -56,10 +93,10 @@ set_target_properties(QApt
 
 target_link_libraries(QApt
     PUBLIC
-        Qt5::Widgets
+        ${LINK_LIBS}
         ${APTPKG_LIBRARIES}
     PRIVATE
-        Qt5::DBus
+        Qt${QT_DESIRED_VERSION}::DBus
         ${XAPIAN_LIBRARIES})
 
 install(TARGETS QApt EXPORT QAptTargets LIBRARY DESTINATION ${KF5_INSTALL_TARGETS_DEFAULT_ARGS})

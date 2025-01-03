@@ -43,6 +43,7 @@
 #include <apt-pkg/upgrade.h>
 #include <apt-pkg/versionmatch.h>
 #include <string>
+#include <unistd.h>
 
 // System includes
 #include <sys/statvfs.h>

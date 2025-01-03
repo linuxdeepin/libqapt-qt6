@@ -28,32 +28,57 @@ set(qapt_worker_SRCS
     workerdaemon.cpp
     workerinstallprogress.cpp)
 
-qt5_add_dbus_adaptor(qapt_worker_adaptor_SRCS
-    ${CMAKE_CURRENT_BINARY_DIR}/${QAPT_WORKER_RDN_VERSIONED}.transaction.xml
-    transaction.h
-    Transaction
-    transactionadaptor
-    TransactionAdaptor)
+find_package(Qt${QT_DESIRED_VERSION} REQUIRED COMPONENTS Core DBus)
 
-qt5_add_dbus_adaptor(qapt_worker_SRCS
-    ${CMAKE_CURRENT_BINARY_DIR}/${QAPT_WORKER_RDN_VERSIONED}.xml
-    workerdaemon.h
-    WorkerDaemon
-    workeradaptor
-    WorkerAdaptor)
+if (QT_DESIRED_VERSION MATCHES 6)
+    qt_add_dbus_adaptor(qapt_worker_adaptor_SRCS
+        ${CMAKE_CURRENT_BINARY_DIR}/${QAPT_WORKER_RDN_VERSIONED}.transaction.xml
+        transaction.h
+        Transaction
+        transactionadaptor
+        TransactionAdaptor)
+
+    qt_add_dbus_adaptor(qapt_worker_SRCS
+        ${CMAKE_CURRENT_BINARY_DIR}/${QAPT_WORKER_RDN_VERSIONED}.xml
+        workerdaemon.h
+        WorkerDaemon
+        workeradaptor
+        WorkerAdaptor)
+else()
+    qt5_add_dbus_adaptor(qapt_worker_adaptor_SRCS
+        ${CMAKE_CURRENT_BINARY_DIR}/${QAPT_WORKER_RDN_VERSIONED}.transaction.xml
+        transaction.h
+        Transaction
+        transactionadaptor
+        TransactionAdaptor)
+
+    qt5_add_dbus_adaptor(qapt_worker_SRCS
+        ${CMAKE_CURRENT_BINARY_DIR}/${QAPT_WORKER_RDN_VERSIONED}.xml
+        workerdaemon.h
+        WorkerDaemon
+        workeradaptor
+        WorkerAdaptor)
+endif()
 
 add_executable(qaptworker${QAPT_WORKER_VERSION}
     ${qapt_worker_SRCS}
     ${qapt_worker_adaptor_SRCS})
 
 target_link_libraries(qaptworker${QAPT_WORKER_VERSION}
-    Qt5::Core
-    Qt5::DBus
-    PolkitQt5-1::Core
+    Qt${QT_DESIRED_VERSION}::DBus
+    PolkitQt${QT_DESIRED_VERSION}-1::Core
     util
     QApt::Main)
 
 install(TARGETS qaptworker${QAPT_WORKER_VERSION} DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
+
+if (NOT DEFINED DBUS_SYSTEM_SERVICES_INSTALL_DIR)
+    set(DBUS_SYSTEM_SERVICES_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/share/dbus-1/system-services/")
+endif()
+
+if (NOT DEFINED SYSCONF_INSTALL_DIR)
+    set(SYSCONF_INSTALL_DIR "/etc")
+endif()
 
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${QAPT_WORKER_RDN_VERSIONED}.service
         DESTINATION ${DBUS_SYSTEM_SERVICES_INSTALL_DIR})

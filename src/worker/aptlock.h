@@ -24,6 +24,7 @@
 #include <QString>
 
 #include <apt-pkg/fileutl.h>
+#include <unistd.h>
 
 class AptLock
 {

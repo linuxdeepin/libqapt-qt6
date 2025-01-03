@@ -26,6 +26,9 @@
 #include <QProcess>
 #include <QSharedData>
 #include <QStringBuilder>
+#if QT_VERSION >= 0x060000
+#include <QRegularExpression>
+#endif
 
 // APT includes
 #include <apt-pkg/configuration.h>
@@ -126,7 +129,11 @@ void HistoryItemPrivate::parseData(const QString &data)
 
             QString actionPackages = keyValue.value(1);
             // Remove arch info
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
             actionPackages.remove(QRegExp(QLatin1String(":\\w+")));
+#else
+            actionPackages.remove(QRegularExpression(QLatin1String(":\\w+")));
+#endif
 
             for (QString package : actionPackages.split(QLatin1String("), "))) {
                 if (!package.endsWith(QLatin1Char(')'))) {

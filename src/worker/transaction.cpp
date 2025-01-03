@@ -30,7 +30,7 @@
 #include "qaptauthorization.h"
 #include "transactionadaptor.h"
 #include "transactionqueue.h"
-#include "worker/urihelper.h"
+#include "urihelper.h"
 
 #define IDLE_TIMEOUT 30000 // 30 seconds
 
@@ -58,7 +58,11 @@ Transaction::Transaction(TransactionQueue *queue, int userId,
     , m_safeUpgrade(true)
     , m_replaceConfFile(false)
     , m_frontendCaps(QApt::NoCaps)
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
     , m_dataMutex(QMutex::Recursive)
+#else
+    , m_dataMutex()
+#endif
 {
     new TransactionAdaptor(this);
     QDBusConnection connection = QDBusConnection::systemBus();

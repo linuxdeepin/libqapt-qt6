@@ -161,7 +161,11 @@ void SourceEntryPrivate::parseData(const QString &data)
         return;
     }
 
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
     QStringList pieces = tData.mid(start).split(' ', QString::SkipEmptyParts);
+#else
+    QStringList pieces = tData.mid(start).split(' ', Qt::SkipEmptyParts);
+#endif
     if (pieces.isEmpty()) {
         // Invalid source entry
         isValid = false;

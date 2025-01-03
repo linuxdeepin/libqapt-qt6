@@ -33,6 +33,10 @@
 #include <QTemporaryFile>
 #include <QTextStream>
 
+#if QT_VERSION >= 0x060000
+#include <QRegularExpression>
+#endif
+
 // Apt includes
 #include <apt-pkg/algorithms.h>
 #include <apt-pkg/acquire-item.h>
@@ -274,14 +278,23 @@ QString Package::longDescription() const
         QStringList sections = rawDescription.split(QLatin1String("\n ."));
 
         for (int i = 0; i < sections.count(); ++i) {
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
             sections[i].replace(QRegExp(QLatin1String("\n( |\t)+(-|\\*)")),
                                 QLatin1String("\n\r ") % QString::fromUtf8("\xE2\x80\xA2"));
+#else
+            sections[i].replace(QRegularExpression(QLatin1String("\n( |\t)+(-|\\*)")),
+                                QLatin1String("\n\r ") % QString::fromUtf8("\xE2\x80\xA2"));
+#endif
             // There should be no new lines within a section.
             sections[i].remove(QLatin1Char('\n'));
             // Hack to get the lists working again.
             sections[i].replace(QLatin1Char('\r'), QLatin1Char('\n'));
             // Merge multiple whitespace chars into one
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
             sections[i].replace(QRegExp(QLatin1String("\\ \\ +")), QChar::fromLatin1(' '));
+#else
+            sections[i].replace(QRegularExpression(QLatin1String("\\ \\ +")), QChar::fromLatin1(' '));
+#endif
             // Remove the initial whitespace
             if (sections[i].startsWith(QChar::Space)) {
                 sections[i].remove(0, 1);
@@ -1003,6 +1016,23 @@ QStringList Package::providesList() const
     for (pkgCache::PrvIterator Prv =
          State.CandidateVerIter(*d->backend->cache()->depCache()).ProvidesList(); !Prv.end(); ++Prv) {
         provides.append(QLatin1String(Prv.Name()));
+    }
+
+   return provides;
+}
+
+QMap<QString, QString> Package::providesListEnhance() const
+{
+    pkgDepCache::StateCache &State = (*d->backend->cache()->depCache())[d->packageIter];
+    if (!State.CandidateVer) {
+        return {};
+    }
+
+    QMap<QString, QString> provides;
+
+    for (pkgCache::PrvIterator Prv =
+         State.CandidateVerIter(*d->backend->cache()->depCache()).ProvidesList(); !Prv.end(); ++Prv) {
+        provides.insert(QLatin1String(Prv.Name()), QLatin1String(Prv.ProvideVersion()));
     }
 
    return provides;

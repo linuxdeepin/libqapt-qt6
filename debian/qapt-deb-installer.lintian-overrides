@@ -1,2 +1,0 @@
-# doesn't need a man, is only used from scripts/internally
-qapt-deb-installer: binary-without-manpage usr/bin/qapt-deb-installer

@@ -495,6 +495,14 @@ public:
     */
     QStringList providesList() const;
 
+    /**
+     * Returns a list of the names of all the virtual packages that this package
+     * provides.
+     *
+     * \return A \c QMap<QString, QString> of packages that this package provides and versions.
+     */
+    QMap<QString, QString> providesListEnhance() const;
+
    /**
     * Returns a list of the names of all the packages that this package recommends.
     *

@@ -24,6 +24,7 @@
 
 // Qt includes
 #include <QMutex>
+#include <QRecursiveMutex>
 #include <QObject>
 #include <QDBusContext>
 #include <QDBusVariant>
@@ -150,7 +151,12 @@ private:
     // Other data
     QMap<int, QString> m_roleActionMap;
     QTimer *m_idleTimer;
-    QMutex m_dataMutex;
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
+    QMutex m_mutex;
+#else
+    QRecursiveMutex m_dataMutex;
+#endif
+    
     QString m_service;
 
     // Private functions

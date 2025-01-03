@@ -106,7 +106,11 @@ void ChangelogEntryPrivate::parseData(const QString &sourcePackage)
         if (list.count() > 1) {
             time_t issueTime = -1;
             if (RFC1123StrToTime(list.at(3).toUtf8().data(), issueTime)) {
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
                 issueDate = QDateTime::fromTime_t(issueTime);
+#else
+                issueDate = QDateTime::fromSecsSinceEpoch(issueTime);
+#endif
                 break;
             }
         }

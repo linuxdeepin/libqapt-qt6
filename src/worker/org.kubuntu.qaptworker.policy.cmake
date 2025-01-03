@@ -16,7 +16,9 @@
   </action>
   <action id="@QAPT_WORKER_RDN_VERSIONED@.commitchanges">
     <description>Install or remove packages</description>
+    <description xml:lang="zh_CN">安装或移除软件包需要授权</description>
     <message>Install or remove packages</message>
+    <message xml:lang="zh_CN">安装或移除软件包需要授权</message>
     <defaults>
       <allow_inactive>no</allow_inactive>
       <allow_active>auth_admin_keep</allow_active>

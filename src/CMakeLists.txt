@@ -3,6 +3,8 @@ cmake_minimum_required(VERSION 3.7)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
+set(LIBNAME QApt-qt6)
+
 set(qapt_SRCS
     backend.cpp
     cache.cpp
@@ -46,23 +48,23 @@ set_property(SOURCE ${CMAKE_CURRENT_BINARY_DIR}/worker/${QAPT_WORKER_RDN_VERSION
 if (QT_DESIRED_VERSION MATCHES 6)
     list(APPEND LINK_LIBS Qt${QT_DESIRED_VERSION}::Core5Compat)
 
-    message(WARNING "Qt6 terrible use of transaction xml file")
+    message("Qt6 terrible use of transaction xml file")
     qt_add_dbus_interface(qapt_SRCS
                        ${CMAKE_CURRENT_BINARY_DIR}/worker/${QAPT_WORKER_RDN_VERSIONED}.transaction.xml
                        transactioninterface_p)
 
-    message(WARNING "Qt6 terrible use of  worker xml file")
+    message("Qt6 terrible use of  worker xml file")
     qt_add_dbus_interface(qapt_SRCS
                             ${CMAKE_CURRENT_BINARY_DIR}/worker/${QAPT_WORKER_RDN_VERSIONED}.xml
                             workerinterface_p)
 
 else()
-    message(WARNING "terrible use of transaction xml file")
+    message("terrible use of transaction xml file")
     qt5_add_dbus_interface(qapt_SRCS
                         ${CMAKE_CURRENT_BINARY_DIR}/worker/${QAPT_WORKER_RDN_VERSIONED}.transaction.xml
                         transactioninterface_p)
 
-    message(WARNING "terrible use of  worker xml file")
+    message("terrible use of  worker xml file")
     qt5_add_dbus_interface(qapt_SRCS
                         ${CMAKE_CURRENT_BINARY_DIR}/worker/${QAPT_WORKER_RDN_VERSIONED}.xml
                         workerinterface_p)
@@ -78,20 +80,20 @@ configure_file(dbusinterfaces_p.h.cmake ${CMAKE_CURRENT_BINARY_DIR}/dbusinterfac
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
-add_library(QApt SHARED ${qapt_SRCS})
-add_library(QApt::Main ALIAS QApt)
+add_library(${LIBNAME} SHARED ${qapt_SRCS})
+add_library(${LIBNAME}::Main ALIAS ${LIBNAME})
 
 # Set header paths for target so the utils can find them.
-target_include_directories(QApt PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/..;${CMAKE_CURRENT_BINARY_DIR}/..>")
-target_include_directories(QApt INTERFACE "$<INSTALL_INTERFACE:${INCLUDE_INSTALL_DIR}/QApt>" )
+target_include_directories(${LIBNAME} PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/..;${CMAKE_CURRENT_BINARY_DIR}/..>")
+target_include_directories(${LIBNAME} INTERFACE "$<INSTALL_INTERFACE:${INCLUDE_INSTALL_DIR}/QApt>" )
 
-set_target_properties(QApt
+set_target_properties(${LIBNAME}
     PROPERTIES
     VERSION ${QAPT_VERSION_STRING}
     SOVERSION ${QAPT_SOVERSION}
     EXPORT_NAME Main)
 
-target_link_libraries(QApt
+target_link_libraries(${LIBNAME}
     PUBLIC
         ${LINK_LIBS}
         ${APTPKG_LIBRARIES}
@@ -99,7 +101,7 @@ target_link_libraries(QApt
         Qt${QT_DESIRED_VERSION}::DBus
         ${XAPIAN_LIBRARIES})
 
-install(TARGETS QApt EXPORT QAptTargets LIBRARY DESTINATION ${KF5_INSTALL_TARGETS_DEFAULT_ARGS})
+install(TARGETS ${LIBNAME} EXPORT QApt-qt6Targets LIBRARY DESTINATION ${KF5_INSTALL_TARGETS_DEFAULT_ARGS})
 
 ecm_generate_headers(QAPT_CAMEL_CASE_HEADERS
     HEADER_NAMES

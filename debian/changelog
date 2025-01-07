@@ -1,8 +1,8 @@
-libqapt (3.0.6-deepin) unstable; urgency=medium
+libqapt-qt6 (3.0.6) unstable; urgency=medium
 
   * chore: Make a Qt6 support version
 
- -- re2zero <yangwu@uniontech.com>  Fri, 3 Jan 2025 14:58:33 +0800
+ -- re2zero <yangwu@uniontech.com>  Thu, 7 Jan 2025 19:13:31 +0800
 
 libqapt (3.0.5.2-deepin3) unstable; urgency=medium
 

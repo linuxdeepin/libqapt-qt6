@@ -30,8 +30,6 @@ Section: libs
 Architecture: any
 Multi-Arch: same
 Depends: ${misc:Depends}, ${shlibs:Depends}
-Replaces:
-         libqapt3
 Recommends: libqapt3-qt6-runtime (= ${binary:Version})
 Description: QApt library package
  LibQApt is a Qt wrapper around the libapt-pkg library as well as an APT
@@ -62,8 +60,6 @@ Architecture: any
 Depends: dde-polkit-agent | polkit-kde-agent-1 | policykit-1-gnome,
          ${misc:Depends},
          ${shlibs:Depends}
-Replaces:
-         libqapt3-runtime
 Description: Runtime components for the QApt library
  LibQApt is a Qt wrapper around the libapt-pkg library as well as an APT
  implementation using libapt-pkg. The aim is to provide a sane API for

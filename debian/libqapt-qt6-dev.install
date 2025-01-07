@@ -1,5 +1,5 @@
-usr/include/QApt/
-usr/include/qapt/
-usr/lib/*/cmake/QApt/
-usr/lib/*/libQApt.so
-usr/lib/*/pkgconfig/libqapt.pc
+usr/include/qapt-qt6/QApt/
+usr/include/qapt-qt6/qapt/
+usr/lib/*/cmake/QApt-qt6/
+usr/lib/*/libQApt-qt6.so
+usr/lib/*/pkgconfig/libqapt-qt6.pc

@@ -6,12 +6,12 @@
 </version>
 
 <headers>
-    /usr/include/QApt/
-    /usr/include/qapt/
+    /usr/include/qapt-qt6/QApt/
+    /usr/include/qapt-qt6/qapt/
 </headers>
 
 <libs>
-    /usr/lib/@@DEB_HOST_MULTIARCH@@/libQApt.so
+    /usr/lib/@@DEB_HOST_MULTIARCH@@/libQApt-qt6.so
 </libs>
 
 <gcc_options>

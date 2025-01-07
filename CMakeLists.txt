@@ -26,7 +26,6 @@ set(CMAKE_MODULE_PATH
 
 include(ECMGenerateHeaders)
 include(ECMPackageConfigHelpers)
-include(ECMPoQmTools)
 include(ECMSetupVersion)
 include(FeatureSummary)
 
@@ -89,8 +88,11 @@ set(QT_DESIRED_VERSION ${QT_VERSION_MAJOR})
 # add_feature_info(qapt-gst-helper WITH_GSTREAMER "GStreamer codec helper util")
 
 # message(WARNING "gettext and tr in the same source is insanely tricky, maybe we should give some ki18n to qapt...")
+if (QT_DESIRED_VERSION MATCHES 5)
+include(ECMPoQmTools)
 if (IS_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/po")
     ecm_install_po_files_as_qm(po)
+endif()
 endif()
 
 

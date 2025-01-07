@@ -152,7 +152,7 @@ private:
     QMap<int, QString> m_roleActionMap;
     QTimer *m_idleTimer;
 #if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
-    QMutex m_mutex;
+    QMutex m_dataMutex;
 #else
     QRecursiveMutex m_dataMutex;
 #endif

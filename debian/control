@@ -1,4 +1,4 @@
-Source: libqapt
+Source: libqapt-qt6
 Section: kde
 Priority: optional
 Maintainer: Debian/Kubuntu KDE Extras Team <pkg-kde-extras@lists.alioth.debian.org>

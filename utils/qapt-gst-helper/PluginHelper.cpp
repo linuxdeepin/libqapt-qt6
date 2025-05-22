@@ -60,6 +60,7 @@ PluginHelper::PluginHelper(QWidget *parent, const QStringList &gstDetails, int w
     , m_done(false)
     , m_details(gstDetails)
 {
+    qDebug() << "Initializing PluginHelper with" << gstDetails.size() << "plugin details";
     // Set frontend capabilities
     QApt::FrontendCaps caps = (QApt::FrontendCaps)(QApt::MediumPromptCap | QApt::UntrustedPromptCap);
     m_backend->setFrontendCaps(caps);
@@ -82,6 +83,8 @@ PluginHelper::PluginHelper(QWidget *parent, const QStringList &gstDetails, int w
 
 void PluginHelper::run()
 {
+    qDebug() << "Starting plugin search for" << m_searchList.size() << "plugins";
+
     if (!m_searchList.size()) {
         KMessageBox::error(this, i18nc("@info Error message", "No valid plugin "
                                        "info was provided, so no plugins could "
@@ -97,8 +100,11 @@ void PluginHelper::run()
     incrementProgress();
     show();
 
-    if (!m_backend->init())
+    qDebug() << "Initializing backend";
+    if (!m_backend->init()) {
+        qCritical() << "Backend initialization failed";
         initError();
+    }
 
     m_finder = new PluginFinder(0, m_backend);
     connect(m_finder, SIGNAL(foundCodec(QApt::Package*)),
@@ -123,6 +129,8 @@ void PluginHelper::setCloseButton()
 
 void PluginHelper::initError()
 {
+    qDebug() << "Initialization error:" << m_backend->initErrorMessage();
+
     QString details = m_backend->initErrorMessage();
 
     QString text = i18nc("@label",
@@ -191,6 +199,8 @@ void PluginHelper::canSearch()
 
 void PluginHelper::offerInstallPackages()
 {
+    qDebug() << "Offering to install" << m_foundCodecs.size() << "packages";
+
     int ret = KMessageBox::No;
 
     for (QApt::Package *package : m_foundCodecs) {
@@ -235,6 +245,8 @@ void PluginHelper::cancellableChanged(bool cancellable)
 
 void PluginHelper::transactionErrorOccurred(QApt::ErrorCode code)
 {
+    qDebug() << "Transaction error occurred:" << code;
+
     QString text;
     QString title;
 
@@ -364,6 +376,8 @@ void PluginHelper::untrustedPrompt(const QStringList &untrustedPackages)
 
 void PluginHelper::transactionStatusChanged(QApt::TransactionStatus status)
 {
+    qDebug() << "Transaction status changed to:" << status;
+
     switch (status) {
     case QApt::SetupStatus:
     case QApt::WaitingStatus:
@@ -434,6 +448,8 @@ void PluginHelper::raiseErrorMessage(const QString &text, const QString &title)
 
 void PluginHelper::foundCodec(QApt::Package *package)
 {
+    qDebug() << "Found matching codec package:" << package->name();
+
     m_foundCodecs << package;
     incrementProgress();
 }
@@ -479,6 +495,8 @@ void PluginHelper::reject()
 
 void PluginHelper::install()
 {
+    qDebug() << "Starting package installation";
+
     m_trans = m_backend->commitChanges();
 
     // Provide proxy/locale to the transaction

@@ -24,6 +24,7 @@
 #include <QByteArray>
 #include <QTemporaryFile>
 #include <QDBusConnection>
+#include <QDebug>
 
 // Apt includes
 #include <apt-pkg/acquire.h>
@@ -211,6 +212,7 @@ Backend::Backend(QObject *parent)
         , d_ptr(new BackendPrivate)
 {
     Q_D(Backend);
+    qDebug() << "Initializing Backend";
 
     d->worker = new WorkerInterface(QLatin1String(s_workerReverseDomainName),
                                     QLatin1String("/"), QDBusConnection::systemBus(),
@@ -228,7 +230,10 @@ Backend::~Backend()
 bool Backend::init()
 {
     Q_D(Backend);
+    qDebug() << "Initializing Backend APT system";
+
     if (!pkgInitConfig(*_config) || !pkgInitSystem(*_config, _system)) {
+        qCritical() << "Failed to initialize APT system";
         setInitError();
         return false;
     }
@@ -237,18 +242,25 @@ bool Backend::init()
     d->config = new Config(this);
     d->nativeArch = config()->readEntry(QLatin1String("APT::Architecture"),
                                         QLatin1String(""));
-    openXapianIndex();
+    qDebug() << "Native architecture:" << d->nativeArch;
 
-    return reloadCache();
+    openXapianIndex();
+    qDebug() << "Xapian index opened";
+
+    bool result = reloadCache();
+    qDebug() << "Cache reload result:" << result;
+    return result;
 }
 
 bool Backend::reloadCache()
 {
     Q_D(Backend);
+    qDebug() << "Reloading APT cache";
 
     emit cacheReloadStarted();
 
     if (!d->cache->open()) {
+        qCritical() << "Failed to open APT cache";
         setInitError();
         return false;
     }
@@ -329,13 +341,16 @@ void Backend::setInitError()
     Q_D(Backend);
 
     std::string message;
-    if (_error->PopMessage(message))
+    if (_error->PopMessage(message)) {
         d->initErrorMessage = QString::fromStdString(message);
+        qWarning() << "Backend initialization error:" << d->initErrorMessage;
+    }
 }
 
 void Backend::loadPackagePins()
 {
     Q_D(Backend);
+    qDebug() << "Loading package pins";
 
     QString dirBase = d->config->findDirectory(QLatin1String("Dir::Etc"));
     QString dir = dirBase % QLatin1String("preferences.d/");
@@ -371,6 +386,7 @@ void Backend::loadPackagePins()
 void Backend::loadReleaseDate()
 {
     Q_D(Backend);
+    qDebug() << "Loading release date information";
 
     // Reset value in case we are re-loading cache
     d->releaseDate = QDateTime();
@@ -402,9 +418,11 @@ void Backend::loadReleaseDate()
 
     d->releaseDate = d->getReleaseDateFromDistroInfo(releaseId, releaseCodename);
     if (!d->releaseDate.isValid()) {
+        qDebug() << "Falling back to APT archive for release date";
         // If we could not find the date in the csv file, we fallback to Apt archive.
         d->releaseDate = d->getReleaseDateFromArchive(releaseId, releaseCodename);
     }
+    qDebug() << "Release date loaded:" << d->releaseDate;
 }
 
 QString Backend::initErrorMessage() const

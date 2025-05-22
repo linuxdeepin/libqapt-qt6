@@ -50,14 +50,17 @@ WorkerInstallProgress::WorkerInstallProgress(int begin, int end)
         , m_progressBegin(begin)
         , m_progressEnd(end)
 {
+    qDebug() << "WorkerInstallProgress created with progress range:" << begin << "-" << end;
     setenv("APT_LISTBUGS_FRONTEND", "none", 1);
     setenv("APT_LISTCHANGES_FRONTEND", "debconf", 1);
 }
 
 void WorkerInstallProgress::setTransaction(Transaction *trans)
 {
+    qDebug() << "Setting transaction for install progress";
     m_trans = trans;
     std::setlocale(LC_ALL, m_trans->locale().toLatin1());
+    qDebug() << "Locale set to:" << m_trans->locale();
 
     // FIXME: bloody workaround.
     //        Since QLocale::system and consequently QTextCodec::forLocale is
@@ -85,11 +88,13 @@ void WorkerInstallProgress::setTransaction(Transaction *trans)
 
 pkgPackageManager::OrderResult WorkerInstallProgress::start(pkgPackageManager *pm)
 {
+    qDebug() << "Starting package installation";
     m_trans->setStatus(QApt::CommittingStatus);
     pkgPackageManager::OrderResult res;
 
     res = pm->DoInstallPreFork();
     if (res == pkgPackageManager::Failed) {
+        qWarning() << "Package installation pre-fork failed";
         return res;
     }
 
@@ -97,6 +102,7 @@ pkgPackageManager::OrderResult WorkerInstallProgress::start(pkgPackageManager *p
 
     //Initialize both pipes
     if (pipe(readFromChildFD) < 0) {
+        qCritical() << "Failed to create pipe for child process";
         return res;
     }
 
@@ -104,6 +110,7 @@ pkgPackageManager::OrderResult WorkerInstallProgress::start(pkgPackageManager *p
     m_child_id = forkpty(&pty_master, 0, 0, 0);
 
     if (m_child_id == -1) {
+        qCritical() << "Failed to fork child process";
         return res;
     } else if (m_child_id == 0) {
         // close pipe we don't need
@@ -146,6 +153,7 @@ pkgPackageManager::OrderResult WorkerInstallProgress::start(pkgPackageManager *p
 
 void WorkerInstallProgress::updateInterface(int fd, int writeFd)
 {
+    qDebug() << "Updating installation interface";
     char buf[2];
     static char line[1024] = "";
 
@@ -174,6 +182,7 @@ void WorkerInstallProgress::updateInterface(int fd, int writeFd)
             }
 
             if (status.contains(QLatin1String("pmerror"))) {
+                qWarning() << "Installation error for package:" << package << "Error:" << str;
                 // Append error string to existing error details
                 m_trans->setErrorDetails(m_trans->errorDetails() % package % '\n' % str % "\n\n");
             } else if (status.contains(QLatin1String("pmconffile"))) {
@@ -186,8 +195,10 @@ void WorkerInstallProgress::updateInterface(int fd, int writeFd)
 
                 // Prompt for which file to use if the frontend supports that
                 if (m_trans->frontendCaps() & QApt::ConfigPromptCap) {
+                    qDebug() << "Configuration file conflict detected between:" << oldFile << "and" << newFile;
                     m_trans->setConfFileConflict(oldFile, newFile);
                     m_trans->setStatus(QApt::WaitingConfigFilePromptStatus);
+                    qDebug() << "Waiting for user input on config file conflict";
 
                     while (m_trans->isPaused())
                         usleep(200000);
@@ -217,6 +228,7 @@ void WorkerInstallProgress::updateInterface(int fd, int writeFd)
 
             progress = qRound(qreal(m_progressBegin + qreal(percentage / 100.0) * (m_progressEnd - m_progressBegin)));
 
+            qDebug() << "Installation progress:" << progress << "% Package:" << package << "Status:" << str;
             m_trans->setProgress(progress);
             m_trans->setStatusDetails(str);
             // clean-up

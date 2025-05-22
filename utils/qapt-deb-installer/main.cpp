@@ -22,6 +22,7 @@
 
 #include <QApplication>
 #include <QCommandLineParser>
+#include <QDebug>
 #include <QIcon>
 #include <QPointer>
 
@@ -35,6 +36,8 @@ static const char version[] = CMAKE_PROJECT_VERSION;
 
 int main(int argc, char **argv)
 {
+    qDebug() << "Starting qapt-deb-installer";
+
     QApplication app(argc, argv);
     app.setWindowIcon(QIcon::fromTheme("applications-other"));
 
@@ -65,18 +68,23 @@ int main(int argc, char **argv)
     aboutData.processCommandLine(&parser);
 
     // do not restore!
+    qDebug() << "Checking session restore status";
     if (app.isSessionRestored()) {
+        qDebug() << "Session restored - exiting";
         exit(0);
     }
 
     QString debFile;
 
+    qDebug() << "Processing command line arguments";
     if (parser.positionalArguments().size() > 0) {
+        qInfo() << "DEB file specified:" << parser.positionalArguments().at(0);
         debFile = parser.positionalArguments().at(0);
     }
 
     QPointer<DebInstaller> debInstaller = new DebInstaller(0, debFile);
 
+    qDebug() << "Executing DebInstaller";
     switch (debInstaller->exec()) {
         case QDialog::Accepted:
             return 0;

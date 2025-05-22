@@ -20,6 +20,7 @@
 
 #include "PluginFinder.h"
 
+#include <QDebug>
 #include <QThread>
 
 #include <QApt/Backend>
@@ -32,6 +33,7 @@ PluginFinder::PluginFinder(QObject *parent, QApt::Backend *backend)
     , m_backend(backend)
     , m_stop(false)
 {
+    qDebug() << "Initializing PluginFinder with backend";
 }
 
 PluginFinder::~PluginFinder()
@@ -40,7 +42,10 @@ PluginFinder::~PluginFinder()
 
 void PluginFinder::find(const PluginInfo *pluginInfo)
 {
+    qDebug() << "Finding matches for plugin:" << pluginInfo->name();
+
     if (m_stop) {
+        qDebug() << "Search stopped - aborting find operation";
         return;
     }
 
@@ -48,12 +53,14 @@ void PluginFinder::find(const PluginInfo *pluginInfo)
 
     if (!matcher.hasMatches()) {
         // No such codec
+        qDebug() << "No matches found for plugin:" << pluginInfo->name();
         emit notFound();
         return;
     }
 
     foreach (QApt::Package *package, m_backend->availablePackages()) {
         if (matcher.matches(package) && package->architecture() == m_backend->nativeArchitecture()) {
+            qDebug() << "Found matching package:" << package->name();
             emit foundCodec(package);
             return;
         }
@@ -69,6 +76,8 @@ void PluginFinder::setSearchList(const QList<PluginInfo *> &list)
 
 void PluginFinder::startSearch()
 {
+    qDebug() << "Starting search for" << m_searchList.size() << "plugins";
+
     foreach(PluginInfo *info, m_searchList) {
         find(info);
     }
@@ -78,5 +87,7 @@ void PluginFinder::startSearch()
 
 void PluginFinder::stop()
 {
+    qDebug() << "Received stop signal";
+
     m_stop = true;
 }

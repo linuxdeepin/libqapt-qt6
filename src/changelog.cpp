@@ -25,6 +25,7 @@
 #include <QSharedData>
 #include <QStringBuilder>
 #include <QStringList>
+#include <QDebug>
 
 // QApt includes
 #include "package.h"
@@ -68,6 +69,7 @@ public:
 
 void ChangelogEntryPrivate::parseData(const QString &sourcePackage)
 {
+    qDebug() << "Parsing changelog entry for package:" << sourcePackage;
     QStringList lines = data.split('\n');
     QRegExp rxInfo(QString("^%1 \\((.*)\\)(.*)$").arg(QRegExp::escape(sourcePackage)));
 
@@ -120,6 +122,8 @@ void ChangelogEntryPrivate::parseData(const QString &sourcePackage)
 ChangelogEntry::ChangelogEntry(const QString &entryData, const QString &sourcePkg)
         : d(new ChangelogEntryPrivate(entryData, sourcePkg))
 {
+    qDebug() << "Created changelog entry for package:" << sourcePkg
+             << "Version:" << d->version;
 }
 
 ChangelogEntry::ChangelogEntry(const ChangelogEntry &other)
@@ -191,6 +195,8 @@ public:
 Changelog::Changelog(const QString &data, const QString &sourcePackage)
         : d(new ChangelogPrivate(data, sourcePackage))
 {
+    qDebug() << "Created changelog for package:" << sourcePackage
+             << "Entry count:" << entries().count();
 }
 
 Changelog::Changelog(const Changelog &other)
@@ -219,7 +225,7 @@ QString Changelog::text() const
 
 ChangelogEntryList Changelog::entries() const
 {
-
+    qDebug() << "Extracting changelog entries";
     ChangelogEntryList entries;
     QStringList entryTexts;
 
@@ -250,6 +256,7 @@ ChangelogEntryList Changelog::entries() const
 
 ChangelogEntryList Changelog::newEntriesSince(const QString &version) const
 {
+    qDebug() << "Finding changelog entries newer than version:" << version;
     ChangelogEntryList newEntries;
 
     for (const ChangelogEntry &entry : entries()) {
@@ -257,10 +264,12 @@ ChangelogEntryList Changelog::newEntriesSince(const QString &version) const
 
         // Add entries newer than the given version
         if (res > 0) {
+            qDebug() << "Found newer entry version:" << entry.version();
             newEntries << entry;
         }
     }
 
+    qDebug() << "Found" << newEntries.count() << "new changelog entries";
     return newEntries;
 }
 

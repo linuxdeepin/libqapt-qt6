@@ -50,6 +50,9 @@ public:
         , fetchedSize(pSize)
         , statusMessage(sMessage)
     {
+        qDebug() << "Created DownloadProgress for URI:" << dUri
+                 << "Status:" << dStatus << "Size:" << fSize
+                 << "Downloaded:" << pSize;
     }
 
     DownloadProgressPrivate(const DownloadProgressPrivate &other)
@@ -121,6 +124,8 @@ QApt::DownloadStatus DownloadProgress::status() const
 
 void DownloadProgress::setStatus(QApt::DownloadStatus status)
 {
+    qDebug() << "Download status changed from" << d->status << "to" << status
+             << "for URI:" << d->uri;
     d->status = status;
 }
 
@@ -151,6 +156,8 @@ quint64 DownloadProgress::fetchedSize() const
 
 void DownloadProgress::setFetchedSize(quint64 partialSize)
 {
+    qDebug() << "Download progress updated:" << partialSize << "/" << d->fileSize
+             << "(" << progress() << "%) for URI:" << d->uri;
     d->fetchedSize = partialSize;
 }
 
@@ -171,13 +178,16 @@ int DownloadProgress::progress() const
 
 void DownloadProgress::registerMetaTypes()
 {
+    qDebug() << "Registering DownloadProgress meta types";
     qRegisterMetaType<QApt::DownloadProgress>("QApt::DownloadProgress");
     qDBusRegisterMetaType<QApt::DownloadProgress>();
+    qDebug() << "DownloadProgress meta types registered";
 }
 
 const QDBusArgument &operator>>(const QDBusArgument &argument,
                                 DownloadProgress &progress)
 {
+    qDebug() << "Deserializing DownloadProgress from DBus";
     argument.beginStructure();
     QString uri;
     argument >> uri;
@@ -204,12 +214,15 @@ const QDBusArgument &operator>>(const QDBusArgument &argument,
     progress.setStatusMessage(statusMessage);
 
     argument.endStructure();
-
+    qDebug() << "DownloadProgress deserialized:" << progress.uri()
+             << "Status:" << progress.status();
     return argument;
 }
 
 QDBusArgument &operator<<(QDBusArgument &argument, const DownloadProgress &progress)
 {
+    qDebug() << "Serializing DownloadProgress to DBus:" << progress.uri()
+             << "Status:" << progress.status();
     argument.beginStructure();
     argument << progress.uri() << (int)progress.status()
              << progress.shortDescription() << progress.fileSize()

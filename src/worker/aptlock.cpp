@@ -29,31 +29,43 @@ AptLock::AptLock(const QString &path)
     : m_path(path.toUtf8())
     , m_fd(-1)
 {
+    qDebug() << "AptLock initialized with path:" << path;
 }
 
 bool AptLock::isLocked() const
 {
-    return m_fd != -1;
+    bool locked = m_fd != -1;
+    qDebug() << "AptLock::isLocked() returning:" << locked;
+    return locked;
 }
 
 bool AptLock::acquire()
 {
-    if (isLocked())
+    qDebug() << "AptLock::acquire() called";
+    if (isLocked()) {
+        qDebug() << "Lock already acquired";
         return true;
+    }
 
     std::string str = m_path.data();
     m_fd = GetLock(str + "lock");
     m_lock.Fd(m_fd);
 
-    return isLocked();
+    bool success = isLocked();
+    qDebug() << "AptLock::acquire()" << (success ? "succeeded" : "failed");
+    return success;
 }
 
 void AptLock::release()
 {
-    if (!isLocked())
+    qDebug() << "AptLock::release() called";
+    if (!isLocked()) {
+        qDebug() << "No lock to release";
         return;
+    }
 
     m_lock.Close();
     ::close(m_fd);
     m_fd = -1;
+    qDebug() << "Lock released successfully";
 }

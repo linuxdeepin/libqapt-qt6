@@ -46,10 +46,14 @@ public:
         , line(lineData)
         , file(fileName)
     {
-        if (file.isEmpty())
+        qDebug() << "Creating source entry from line:" << lineData;
+        if (file.isEmpty()) {
             file = QString::fromStdString(_config->FindFile("Dir::Etc::sourcelist"));
+            qDebug() << "Using default source list file:" << file;
+        }
 
         parseData(line);
+        qDebug() << "Source entry initialized. Valid:" << isValid << "Enabled:" << isEnabled;
     }
 
     // Data members
@@ -69,19 +73,23 @@ public:
 
 void SourceEntryPrivate::parseData(const QString &data)
 {
-    if (data.isEmpty())
+    if (data.isEmpty()) {
+        qDebug() << "Empty source entry data";
         return;
+    }
 
     QString tData = data.simplified();
 
     // Check for nonvalid input
     if (tData.isEmpty() || tData == QChar('#')) {
+        qWarning() << "Invalid source entry format";
         isValid = false;
         return;
     }
 
     // Check source enable state
     if (tData.at(0) == '#') {
+        qDebug() << "Source entry is disabled";
         isEnabled = false;
     }
     // Handle multiple comment characters (hey, it happens!)
@@ -106,6 +114,7 @@ void SourceEntryPrivate::parseData(const QString &data)
     type = match.captured(1);
     const QSet<QString> types = { QLatin1String("rpm"), QLatin1String("rpm-src"), QLatin1String("deb"), QLatin1String("deb-src") };
     if (!match.isValid() || !types.contains(type)) {
+        qWarning() << "Invalid source type:" << type;
         isValid = false;
         return;
     }
@@ -274,8 +283,10 @@ QString SourceEntry::file() const
 
 QString SourceEntry::toString() const
 {
-    if (!d->isValid)
+    if (!d->isValid) {
+        qDebug() << "Returning original line for invalid source entry";
         return d->line.trimmed();
+    }
 
     QString line;
 
@@ -284,33 +295,45 @@ QString SourceEntry::toString() const
 
     line += d->type;
 
-    if (!d->architectures.isEmpty())
+    if (!d->architectures.isEmpty()) {
         line += QString(" [arch=%1]").arg(d->architectures.join(QChar(',')));
+        qDebug() << "Added architectures:" << d->architectures;
+    }
 
     line += ' ' % d->uri % ' ' % d->dist;
 
-    if (!d->components.isEmpty())
+    if (!d->components.isEmpty()) {
         line += ' ' + d->components.join(QChar(' '));
+        qDebug() << "Added components:" << d->components;
+    }
 
-    if (!d->comment.isEmpty())
+    if (!d->comment.isEmpty()) {
         line += QLatin1String(" #") % d->comment;
+        qDebug() << "Added comment:" << d->comment;
+    }
 
+    qDebug() << "Generated source entry line:" << line;
     return line;
 }
 
 void SourceEntry::setEnabled(bool isEnabled)
 {
-    if (isEnabled == d->isEnabled)
+    if (isEnabled == d->isEnabled) {
+        qDebug() << "Source enable state unchanged";
         return;
+    }
 
+    qDebug() << "Setting source entry enabled state to:" << isEnabled;
     d->isEnabled = isEnabled;
 
     if (isEnabled) {
         // Remove #
         d->line.remove(0, 1);
+        qDebug() << "Enabled source entry:" << d->line;
     } else {
         // Add #
         d->line.prepend('#');
+        qDebug() << "Disabled source entry:" << d->line;
     }
 }
 

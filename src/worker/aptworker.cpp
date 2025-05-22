@@ -122,10 +122,12 @@ AptWorker::AptWorker(QObject *parent)
     , m_ready(false)
     , m_lastActiveTimestamp(QDateTime::currentMSecsSinceEpoch())
 {
+    qDebug() << "AptWorker initialized";
 }
 
 AptWorker::~AptWorker()
 {
+    qDebug() << "AptWorker cleanup";
     delete m_cache;
     delete m_records;
     qDeleteAll(m_locks);
@@ -150,8 +152,11 @@ quint64 AptWorker::lastActiveTimestamp()
 
 void AptWorker::init()
 {
-    if (m_ready)
+    qDebug() << "AptWorker::init() called";
+    if (m_ready) {
+        qDebug() << "Already initialized";
         return;
+    }
 
     pkgInitConfig(*_config);
     pkgInitSystem(*_config, _system);
@@ -172,13 +177,22 @@ void AptWorker::init()
     }
 
     m_ready = true;
+    qDebug() << "AptWorker initialized successfully";
 }
 
 void AptWorker::runTransaction(Transaction *trans)
 {
+    qDebug() << "AptWorker::runTransaction() called for role:" << trans->role();
+    
     // Check for running transactions or uninitialized worker
-    if (m_trans || !m_ready)
+    if (m_trans) {
+        qWarning() << "Transaction already running, ignoring new request";
         return;
+    }
+    if (!m_ready) {
+        qCritical() << "Worker not initialized";
+        return;
+    }
 
     m_timestampMutex.lock();
     m_lastActiveTimestamp = QDateTime::currentMSecsSinceEpoch();
@@ -227,6 +241,8 @@ void AptWorker::runTransaction(Transaction *trans)
 
 void AptWorker::cleanupCurrentTransaction()
 {
+    qDebug() << "AptWorker::cleanupCurrentTransaction() called";
+    
     // Well, we're finished now.
     m_trans->setProgress(100);
 
@@ -275,6 +291,7 @@ void AptWorker::waitForLocks()
 
 void AptWorker::openCache(int begin, int end)
 {
+    qDebug() << "AptWorker::openCache() called with progress range:" << begin << "-" << end;
     m_trans->setStatus(QApt::LoadingCacheStatus);
     CacheOpenProgress *progress = new CacheOpenProgress(m_trans, begin, end);
 
@@ -301,6 +318,7 @@ void AptWorker::openCache(int begin, int end)
 
 void AptWorker::updateCache()
 {
+    qDebug() << "AptWorker::updateCache() called";
     WorkerAcquire *acquire = new WorkerAcquire(this, 10, 90);
     acquire->setTransaction(m_trans);
 
@@ -434,7 +452,11 @@ bool AptWorker::markChanges()
 
 void AptWorker::upgradeSystem()
 {
-    if (m_trans->safeUpgrade())
+    qDebug() << "AptWorker::upgradeSystem() called";
+    bool safeUpgrade = m_trans->safeUpgrade();
+    qInfo() << "Using" << (safeUpgrade ? "safe" : "full") << "upgrade mode";
+    
+    if (safeUpgrade)
         APT::Upgrade::Upgrade(*m_cache, APT::Upgrade::FORBID_REMOVE_PACKAGES | APT::Upgrade::FORBID_INSTALL_NEW_PACKAGES);
     else
         APT::Upgrade::Upgrade(*m_cache, APT::Upgrade::ALLOW_EVERYTHING);
@@ -444,6 +466,7 @@ void AptWorker::upgradeSystem()
 
 void AptWorker::commitChanges()
 {
+    qDebug() << "AptWorker::commitChanges() called";
     // Initialize fetcher with our progress watcher
     WorkerAcquire *acquire = new WorkerAcquire(this, 15, 50);
     acquire->setTransaction(m_trans);

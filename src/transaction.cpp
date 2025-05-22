@@ -92,6 +92,7 @@ Transaction::Transaction(const QString &tid)
     , d(new TransactionPrivate(tid))
 {
     // Fetch property data from D-Bus
+    qDebug() << "Syncing initial transaction state for:" << d->tid;
     sync();
 
     d->watcher = new QDBusServiceWatcher(this);
@@ -158,6 +159,7 @@ QApt::TransactionStatus Transaction::status() const
 
 void Transaction::updateStatus(TransactionStatus status)
 {
+    qInfo() << "Transaction status changed from" << d->status << "to" << status << "for transaction:" << d->tid;
     d->status = status;
 }
 
@@ -272,6 +274,7 @@ QString Transaction::errorString() const
 
 void Transaction::updateError(ErrorCode error)
 {
+    qWarning() << "Transaction error set:" << error << "for transaction:" << d->tid;
     d->error = error;
 }
 
@@ -373,6 +376,8 @@ int Transaction::progress() const
 void Transaction::updateProgress(int progress)
 {
     if (d->progress != progress) {
+        qDebug() << "Transaction progress updated:" << d->progress << "->" << progress
+                 << "for transaction:" << d->tid;
         d->progress = progress;
         emit progressChanged(d->progress);
     }
@@ -385,6 +390,7 @@ DownloadProgress Transaction::downloadProgress() const
 
 void Transaction::updateDownloadProgress(const DownloadProgress &downloadProgress)
 {
+    qDebug() << "Download progress updated for transaction:" << d->tid;
     d->downloadProgress = downloadProgress;
 }
 
@@ -425,6 +431,7 @@ QString Transaction::filePath() const
 
 void Transaction::updateFilePath(const QString &filePath)
 {
+    qDebug() << "Updating file path to:" << filePath << "for transaction:" << d->tid;
     d->filePath = filePath;
 }
 
@@ -445,12 +452,14 @@ void Transaction::updateErrorDetails(const QString &errorDetails)
 
 void Transaction::setLocale(const QString &locale)
 {
+    qDebug() << "Setting locale to:" << locale << "for transaction:" << d->tid;
     QDBusPendingCall call = d->dbus->setProperty(QApt::LocaleProperty,
                                                  QDBusVariant(locale));
 
     QDBusPendingCallWatcher *watcher = new QDBusPendingCallWatcher(call, this);
     connect(watcher, SIGNAL(finished(QDBusPendingCallWatcher*)),
             this, SLOT(onCallFinished(QDBusPendingCallWatcher*)));
+    qDebug() << "Locale property set request sent via DBus";
 }
 
 void Transaction::setFrontendCaps(FrontendCaps frontendCaps)
@@ -490,15 +499,22 @@ void Transaction::setDebconfPipe(const QString &pipe)
 
 void Transaction::run()
 {
+    qDebug() << "Starting transaction:" << d->tid << "with role:" << d->role;
+    
     QDBusPendingCall call = d->dbus->run();
+    qDebug() << "DBus run call initiated for transaction:" << d->tid;
 
     QDBusPendingCallWatcher *watcher = new QDBusPendingCallWatcher(call, this);
     connect(watcher, SIGNAL(finished(QDBusPendingCallWatcher*)),
             this, SLOT(onCallFinished(QDBusPendingCallWatcher*)));
+    
+    qDebug() << "Transaction watcher setup complete";
 }
 
 void Transaction::cancel()
 {
+    qDebug() << "Cancelling transaction:" << d->tid;
+
     QDBusPendingCall call = d->dbus->cancel();
 
     QDBusPendingCallWatcher *watcher = new QDBusPendingCallWatcher(call, this);

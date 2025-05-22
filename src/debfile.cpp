@@ -68,18 +68,23 @@ class DebFilePrivate
 
 void DebFilePrivate::init()
 {
+    qDebug() << "Initializing DEB file:" << filePath;
     FileFd in(filePath.toUtf8().data(), FileFd::ReadOnly);
+
     debDebFile deb(in);
 
     // Extract control data
     try {
         extractor = new debDebFile::MemControlExtract("control");
         if(!extractor->Read(deb)) {
+            qWarning() << "Failed to read DEB control data:" << filePath;
             return; // not valid.
         } else {
             isValid = true;
+            qDebug() << "DEB file initialized successfully:" << filePath;
         }
     } catch (...) {
+        qWarning() << "Exception while reading DEB control data:" << filePath;
         // MemControlExtract likes to throw out of range exceptions when it
         // encounters an invalid file. Catch those to prevent the application
         // from exploding.
@@ -207,8 +212,10 @@ QByteArray DebFile::md5Sum() const
 
 QStringList DebFile::fileList() const
 {
+    qDebug() << "Getting file list from DEB:" << d->filePath;
     QTemporaryFile tempFile;
     if (!tempFile.open()) {
+        qWarning() << "Failed to create temporary file for DEB extraction";
         return QStringList();
     }
 
@@ -228,6 +235,7 @@ QStringList DebFile::fileList() const
     tar.waitForFinished();
 
     QString files = tar.readAllStandardOutput();
+    qDebug() << "Found" << files.count('\n') << "files in DEB package";
 
     QStringList filesList = files.split('\n');
     filesList.removeFirst(); // First entry is the "./" entry
@@ -242,6 +250,7 @@ QStringList DebFile::fileList() const
         filesList.removeAll(QChar::fromLatin1(' '));
     }
 
+    qDebug() << "Final file list contains" << filesList.size() << "entries";
     return filesList;
 }
 
@@ -321,6 +330,7 @@ qint64 DebFile::installedSize() const
 
 bool DebFile::extractArchive(const QString &basePath) const
 {
+    qDebug() << "Extracting DEB archive:" << d->filePath << "to:" << (basePath.isEmpty() ? "current dir" : basePath);
     // The deb extractor extracts to the working path.
     QString oldCurrent = QDir::currentPath();
 
@@ -329,10 +339,11 @@ bool DebFile::extractArchive(const QString &basePath) const
     }
 
     FileFd in(d->filePath.toStdString(), FileFd::ReadOnly);
-    debDebFile deb(in);
 
+    debDebFile deb(in);
     pkgDirStream stream;
     bool res = deb.ExtractArchive(stream);
+    qDebug() << "DEB extraction result:" << res;
 
     // Restore working path once we are done
     if (!basePath.isEmpty()) {
@@ -344,8 +355,10 @@ bool DebFile::extractArchive(const QString &basePath) const
 
 bool DebFile::extractFileFromArchive(const QString &fileName, const QString &destination) const
 {
+    qDebug() << "Extracting file from DEB:" << fileName << "to:" << destination;
     QTemporaryFile tempFile;
     if (!tempFile.open()) {
+        qWarning() << "Failed to create temporary file for extraction";
         return false;
     }
 
@@ -366,7 +379,9 @@ bool DebFile::extractFileFromArchive(const QString &fileName, const QString &des
     tar.start(program2);
     tar.waitForFinished();
 
-    return !tar.exitCode();
+    bool success = !tar.exitCode();
+    qDebug() << "File extraction result:" << success;
+    return success;
 }
 
 }

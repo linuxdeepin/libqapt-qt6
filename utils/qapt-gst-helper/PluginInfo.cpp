@@ -30,6 +30,7 @@ PluginInfo::PluginInfo(const QString &gstDetails)
           , m_data(gstDetails)
           , m_isValid(true)
 {
+    qDebug() << "Creating PluginInfo for:" << gstDetails;
     parseDetails(gstDetails);
 }
 
@@ -43,6 +44,7 @@ void PluginInfo::parseDetails(const QString &gstDetails)
     QStringList parts = gstDetails.split('|');
 
     if (parts.count() != 5) {
+        qDebug() << "Invalid GST details format, expected 5 parts but got:" << parts.count();
         m_isValid = false;
         return;
     }
@@ -61,6 +63,7 @@ void PluginInfo::parseDetails(const QString &gstDetails)
         if (!ss.isEmpty()) {
             m_typeName =  parts.at(0);
         } else {
+            qDebug() << "Invalid URI format in GST details";
             m_isValid = false;
         }
         return;
@@ -81,17 +84,19 @@ void PluginInfo::parseDetails(const QString &gstDetails)
     } else if (m_typeName == "element") {
         m_pluginType = Element;
     } else {
-        qDebug() << "invalid plugin type";
+        qDebug() << "Invalid plugin type:" << m_typeName;
         m_pluginType = InvalidType;
     }
 
     m_structure = gst_structure_new_from_string(m_capsInfo.toUtf8().constData());
+    qDebug() << "Parsing GST structure from:" << m_capsInfo;
     if (!m_structure) {
-        qDebug() << "Failed to parse structure: " << m_capsInfo;
+        qDebug() << "Failed to parse GST structure:" << m_capsInfo;
         m_isValid = false;
         return;
     }
 
+    qDebug() << "Cleaning up GST structure fields";
     /* remove fields that are almost always just MIN-MAX of some sort
      * in order to make the caps look less messy */
     gst_structure_remove_field(m_structure, "pixel-aspect-ratio");

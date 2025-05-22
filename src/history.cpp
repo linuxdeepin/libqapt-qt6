@@ -26,6 +26,7 @@
 #include <QProcess>
 #include <QSharedData>
 #include <QStringBuilder>
+#include <QDebug>
 #if QT_VERSION >= 0x060000
 #include <QRegularExpression>
 #endif
@@ -73,6 +74,7 @@ class HistoryItemPrivate : public QSharedData
 
 void HistoryItemPrivate::parseData(const QString &data)
 {
+    qDebug() << "Parsing history item data";
     QStringList lines = data.split(QLatin1Char('\n'));
 
     int lineIndex = 0;
@@ -83,7 +85,6 @@ void HistoryItemPrivate::parseData(const QString &data)
     actionStrings << QLatin1String("Install") << QLatin1String("Upgrade")
                   << QLatin1String("Downgrade") << QLatin1String("Remove")
                   << QLatin1String("Purge");
-
 
     while (lineIndex < lines.size()) {
         QString line = lines.at(lineIndex);
@@ -99,6 +100,7 @@ void HistoryItemPrivate::parseData(const QString &data)
 
         // Invalid
         if (keyValue.size() < 2) {
+            qWarning() << "Invalid history line format:" << line;
             isValid = false;
             lineIndex++;
             continue;
@@ -106,6 +108,7 @@ void HistoryItemPrivate::parseData(const QString &data)
 
         if (!dateFound && (keyValue.value(0) == QLatin1String("Start-Date"))) {
             startDate = QDateTime::fromString(keyValue.value(1), QLatin1String("yyyy-MM-dd  hh:mm:ss"));
+            qDebug() << "Found history item date:" << startDate;
         } else if (actionIndex > -1) {
             switch(actionIndex) {
             case 0:
@@ -241,19 +244,23 @@ class HistoryPrivate
 
 void HistoryPrivate::init()
 {
+    qDebug() << "Initializing history from:" << historyFilePath;
     QString data;
 
     QFileInfo historyFile(historyFilePath);
     QString directoryPath = historyFile.absoluteDir().absolutePath();
     QDir logDirectory(directoryPath);
     QStringList logFiles = logDirectory.entryList(QDir::Files, QDir::Name);
+    qDebug() << "Found" << logFiles.size() << "log files in directory";
 
     QString fullPath;
 
     for (const QString &file : logFiles) {
         fullPath = directoryPath % '/' % file;
         if (fullPath.contains(QLatin1String("history"))) {
+            qDebug() << "Processing history file:" << fullPath;
             if (fullPath.endsWith(QLatin1String(".gz"))) {
+                qDebug() << "Decompressing gzipped history file";
                 QProcess gunzip;
                 gunzip.start(QLatin1String("gunzip"), QStringList() << QLatin1String("-c") << fullPath);
                 gunzip.waitForFinished();
@@ -261,9 +268,11 @@ void HistoryPrivate::init()
                 data.append(gunzip.readAll());
             } else {
                 QFile historyFile(fullPath);
-
                 if (historyFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
+                    qDebug() << "Reading plain text history file";
                     data.append(historyFile.readAll());
+                } else {
+                    qWarning() << "Failed to open history file:" << fullPath;
                 }
             }
         }
@@ -271,10 +280,16 @@ void HistoryPrivate::init()
 
     data = data.trimmed();
     QStringList stanzas = data.split(QLatin1String("\n\n"));
+    qDebug() << "Found" << stanzas.size() << "history stanzas";
+
     for (const QString &stanza : stanzas) {
         const HistoryItem historyItem(stanza);
-        if (historyItem.isValid())
+        if (historyItem.isValid()) {
             historyItemList << historyItem;
+            qDebug() << "Added valid history item from" << historyItem.startDate();
+        } else {
+            qWarning() << "Skipping invalid history stanza";
+        }
     }
 }
 
@@ -298,10 +313,12 @@ HistoryItemList History::historyItems() const
 
 void History::reload()
 {
+    qDebug() << "Reloading history data";
     Q_D(History);
 
     d->historyItemList.clear();
     d->init();
+    qDebug() << "History reload complete, now contains" << d->historyItemList.size() << "items";
 }
  
 }

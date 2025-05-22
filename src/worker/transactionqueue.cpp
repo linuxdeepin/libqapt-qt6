@@ -24,6 +24,7 @@
 // Qt includes
 #include <QStringList>
 #include <QTimer>
+#include <QDebug>
 
 // Own includes
 #include "aptworker.h"
@@ -34,6 +35,7 @@ TransactionQueue::TransactionQueue(QObject *parent, AptWorker *worker)
     , m_worker(worker)
     , m_activeTransaction(nullptr)
 {
+    qDebug() << "TransactionQueue initialized";
 }
 
 QList<Transaction *> TransactionQueue::transactions() const
@@ -81,6 +83,7 @@ Transaction *TransactionQueue::transactionById(const QString &id) const
 
 void TransactionQueue::addPending(Transaction *trans)
 {
+    qDebug() << "Adding pending transaction:" << trans->transactionId();
     m_pending.append(trans);
     connect(trans, SIGNAL(idleTimeout(Transaction*)),
             this, SLOT(removePending(Transaction*)));
@@ -88,6 +91,7 @@ void TransactionQueue::addPending(Transaction *trans)
 
 void TransactionQueue::removePending(Transaction *trans)
 {
+    qDebug() << "Removing pending transaction:" << trans->transactionId();
     m_pending.removeAll(trans);
 
     trans->deleteLater();
@@ -95,18 +99,23 @@ void TransactionQueue::removePending(Transaction *trans)
 
 void TransactionQueue::enqueue(QString tid)
 {
+    qDebug() << "Enqueueing transaction:" << tid;
     Transaction *trans = pendingTransactionById(tid);
 
-    if (!trans)
+    if (!trans) {
+        qWarning() << "Transaction not found:" << tid;
         return;
+    }
 
     connect(trans, SIGNAL(finished(int)), this, SLOT(onTransactionFinished()));
     m_pending.removeAll(trans);
     m_queue.enqueue(trans);
 
-    if (!m_worker->currentTransaction())
+    if (!m_worker->currentTransaction()) {
+        qDebug() << "No active transaction, running next";
         runNextTransaction();
-    else {
+    } else {
+        qDebug() << "Transaction queued, waiting for current to finish";
         trans->setStatus(QApt::WaitingStatus);
     }
 
@@ -115,15 +124,20 @@ void TransactionQueue::enqueue(QString tid)
 
 void TransactionQueue::remove(QString tid)
 {
+    qDebug() << "Removing transaction:" << tid;
     Transaction *trans = transactionById(tid);
 
-    if (!trans)
+    if (!trans) {
+        qWarning() << "Transaction not found:" << tid;
         return;
+    }
 
     m_queue.removeAll(trans);
 
-    if (trans == m_activeTransaction)
+    if (trans == m_activeTransaction) {
+        qDebug() << "Active transaction removed:" << tid;
         m_activeTransaction = nullptr;
+    }
 
     emitQueueChanged();
 
@@ -135,20 +149,30 @@ void TransactionQueue::onTransactionFinished()
 {
     Transaction *trans = qobject_cast<Transaction *>(sender());
 
-    if (!trans) // Don't want no trouble...
+    if (!trans) {
+        qWarning() << "Invalid transaction finished signal";
         return;
+    }
+
+    qDebug() << "Transaction finished:" << trans->transactionId()
+            << "Exit status:" << trans->exitStatus();
 
     // TODO: Transaction chaining
 
     remove(trans->transactionId());
-    if (m_queue.count())
+    if (m_queue.count()) {
+        qDebug() << "Running next transaction in queue";
         runNextTransaction();
+    } else {
+        qDebug() << "Transaction queue empty";
+    }
     emitQueueChanged();
 }
 
 void TransactionQueue::runNextTransaction()
 {
     m_activeTransaction = m_queue.head();
+    qDebug() << "Starting transaction:" << m_activeTransaction->transactionId();
 
     QMetaObject::invokeMethod(m_worker, "runTransaction", Qt::QueuedConnection,
                               Q_ARG(Transaction *, m_activeTransaction));

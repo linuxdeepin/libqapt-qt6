@@ -193,6 +193,7 @@ bool PackagePrivate::setInUpdatePhase(bool inUpdatePhase)
 Package::Package(QApt::Backend* backend, pkgCache::PkgIterator &packageIter)
         : d(new PackagePrivate(packageIter, backend))
 {
+    qDebug() << "Created package object for:" << QLatin1String(packageIter.Name());
 }
 
 Package::~Package()
@@ -207,6 +208,7 @@ const pkgCache::PkgIterator &Package::packageIterator() const
 
 QLatin1String Package::name() const
 {
+    qDebug() << "Accessed package name:" << QLatin1String(d->packageIter.Name());
     return QLatin1String(d->packageIter.Name());
 }
 
@@ -342,12 +344,17 @@ QString Package::version() const
     if (!d->packageIter->CurrentVer) {
         pkgDepCache::StateCache &State = (*d->backend->cache()->depCache())[d->packageIter];
         if (!State.CandidateVer) {
+            qDebug() << "No version available for package:" << name();
             return QString();
         } else {
-            return QLatin1String(State.CandidateVerIter(*d->backend->cache()->depCache()).VerStr());
+            QString ver = QLatin1String(State.CandidateVerIter(*d->backend->cache()->depCache()).VerStr());
+            qDebug() << "Candidate version for package:" << name() << "is" << ver;
+            return ver;
         }
     } else {
-        return QLatin1String(d->packageIter.CurrentVer().VerStr());
+        QString ver = QLatin1String(d->packageIter.CurrentVer().VerStr());
+        qDebug() << "Current version for package:" << name() << "is" << ver;
+        return ver;
     }
 }
 
@@ -442,6 +449,7 @@ QString Package::priority() const
 
 QStringList Package::installedFilesList() const
 {
+    qDebug() << "Getting installed files list for package:" << name();
     QStringList installedFilesList;
     QString path = QLatin1String("/var/lib/dpkg/info/") % name() % QLatin1String(".list");
 
@@ -449,11 +457,13 @@ QStringList Package::installedFilesList() const
     if (!QFile::exists(path)) {
         path = QLatin1String("/var/lib/dpkg/info/") % name() % ':' %
                              architecture() % QLatin1String(".list");
+        qDebug() << "Using multiarch path:" << path;
     }
 
     QFile infoFile(path);
 
     if (infoFile.open(QFile::ReadOnly)) {
+        qDebug() << "Successfully opened installed files list";
         QTextStream stream(&infoFile);
         QString line;
 
@@ -478,6 +488,9 @@ QStringList Package::installedFilesList() const
         if (!installedFilesList.isEmpty()) {
             installedFilesList.removeLast();
         }
+        qDebug() << "Found" << installedFilesList.size() << "installed files";
+    } else {
+        qWarning() << "Failed to open installed files list:" << path;
     }
 
     return installedFilesList;
@@ -487,11 +500,15 @@ QString Package::origin() const
 {
     const pkgCache::VerIterator &Ver = (*d->backend->cache()->depCache()).GetCandidateVersion(d->packageIter);
 
-    if(Ver.end())
+    if(Ver.end()) {
+        qDebug() << "No origin available for package:" << name();
         return QString();
+    }
 
     pkgCache::VerFileIterator VF = Ver.FileList();
-    return QString::fromUtf8(VF.File().Origin());
+    QString origin = QString::fromUtf8(VF.File().Origin());
+    qDebug() << "Origin for package:" << name() << "is" << origin;
+    return origin;
 }
 
 QString Package::site() const

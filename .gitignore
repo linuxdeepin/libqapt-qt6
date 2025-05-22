@@ -1,1 +1,9 @@
 .pc/
+
+# build output
+build/
+
+# vscode workspace
+.vscode/
+
+# cmake generated files

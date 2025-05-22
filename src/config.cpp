@@ -26,6 +26,7 @@
 #include <QHash>
 #include <QLatin1String>
 #include <QDBusConnection>
+#include <QDebug>
 
 // APT includes
 #include <apt-pkg/aptconfiguration.h>
@@ -114,6 +115,7 @@ Config::Config(QObject *parent)
        , d_ptr(new ConfigPrivate)
 {
     Q_D(Config);
+    qDebug() << "Initializing Config";
 
     d->worker = new WorkerInterface(QLatin1String(s_workerReverseDomainName),
                                     QLatin1String("/"), QDBusConnection::systemBus(),
@@ -122,11 +124,13 @@ Config::Config(QObject *parent)
     QFile file(APT_CONFIG_PATH);
 
     if (file.exists()) {
+        qDebug() << "Loading existing APT config from:" << APT_CONFIG_PATH;
         file.open(QIODevice::ReadOnly | QIODevice::Text);
 
         d->buffer = file.readAll();
         d->newFile = false;
     } else {
+        qDebug() << "Creating new APT config file";
         d->newFile = true;
     }
 }
@@ -138,17 +142,23 @@ Config::~Config()
 
 bool Config::readEntry(const QString &key, const bool defaultValue) const
 {
-    return _config->FindB(key.toStdString(), defaultValue);
+    bool value = _config->FindB(key.toStdString(), defaultValue);
+    qDebug() << "Read config entry:" << key << "=" << value << "(default:" << defaultValue << ")";
+    return value;
 }
 
 int Config::readEntry(const QString &key, const int defaultValue) const
 {
-    return _config->FindI(key.toStdString(), defaultValue);
+    int value = _config->FindI(key.toStdString(), defaultValue);
+    qDebug() << "Read config entry:" << key << "=" << value << "(default:" << defaultValue << ")";
+    return value;
 }
 
 QString Config::readEntry(const QString &key, const QString &defaultValue) const
 {
-    return QString::fromStdString(_config->Find(key.toStdString(), defaultValue.toStdString()));
+    QString value = QString::fromStdString(_config->Find(key.toStdString(), defaultValue.toStdString()));
+    qDebug() << "Read config entry:" << key << "=" << value << "(default:" << defaultValue << ")";
+    return value;
 }
 
 QString Config::findDirectory(const QString &key, const QString &defaultValue) const
@@ -177,10 +187,9 @@ QStringList Config::architectures() const
 void Config::writeEntry(const QString &key, const bool value)
 {
     Q_D(Config);
+    qDebug() << "Writing config entry:" << key << "=" << value;
 
-    QByteArray boolString;
-
-    boolString = value ? "\"true\";" : "\"false\";";
+    QByteArray boolString = value ? "\"true\";" : "\"false\";";
 
     if (d->newFile) {
         d->buffer.append(key.toLatin1() + ' ' + boolString);
@@ -190,7 +199,9 @@ void Config::writeEntry(const QString &key, const bool value)
     }
 
     _config->Set(key.toLatin1(), value);
-    d->worker->writeFileToDisk(QString(d->buffer), APT_CONFIG_PATH);
+    if (!d->worker->writeFileToDisk(QString(d->buffer), APT_CONFIG_PATH)) {
+        qWarning() << "Failed to write config file";
+    }
 }
 
 void Config::writeEntry(const QString &key, const int value)
@@ -215,10 +226,9 @@ void Config::writeEntry(const QString &key, const int value)
 void Config::writeEntry(const QString &key, const QString &value)
 {
     Q_D(Config);
+    qDebug() << "Writing config entry:" << key << "=" << value;
 
-    QByteArray valueString;
-
-    valueString = '\"' + value.toLatin1() + "\";";
+    QByteArray valueString = '\"' + value.toLatin1() + "\";";
 
     if (d->newFile) {
         d->buffer.append(key.toLatin1() + ' ' + valueString);
@@ -228,7 +238,9 @@ void Config::writeEntry(const QString &key, const QString &value)
     }
 
     _config->Set(key.toStdString(), value.toStdString());
-    d->worker->writeFileToDisk(QString(d->buffer), APT_CONFIG_PATH);
+    if (!d->worker->writeFileToDisk(QString(d->buffer), APT_CONFIG_PATH)) {
+        qWarning() << "Failed to write config file";
+    }
 }
 
 }

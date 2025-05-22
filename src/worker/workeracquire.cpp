@@ -46,6 +46,7 @@ WorkerAcquire::WorkerAcquire(QObject *parent, int begin, int end)
         , m_progressEnd(end)
         , m_lastProgress(0)
 {
+    qDebug() << "WorkerAcquire created with progress range:" << begin << "-" << end;
     MorePulses = true;
 }
 
@@ -58,11 +59,13 @@ void WorkerAcquire::setTransaction(Transaction *trans)
 
 void WorkerAcquire::Start()
 {
+    qDebug() << "WorkerAcquire::Start() called";
     // Cleanup from old fetches
     m_calculatingSpeed = true;
 
     m_trans->setCancellable(true);
     m_trans->setStatus(QApt::DownloadingStatus);
+    qInfo() << "Starting download with status:" << m_trans->status();
 
     pkgAcquireStatus::Start();
 }
@@ -95,16 +98,21 @@ void WorkerAcquire::Fail(pkgAcquire::ItemDesc &item)
 {
     // Ignore certain kinds of transient failures (bad code)
     if (item.Owner->Status == pkgAcquire::Item::StatIdle) {
+        qDebug() << "Ignoring idle item failure";
         return;
     }
 
     if (item.Owner->Status == pkgAcquire::Item::StatDone) {
+        qDebug() << "Updating status for completed item";
         updateStatus(item);
     } else {
         // an error was found (maybe 404, 403...)
         // the item that got the error and the error text
         QString failedItem = QString::fromStdString(item.URI);
         QString errorText = QString::fromStdString(item.Owner->ErrorText);
+
+        qWarning() << "Download failed for item:" << failedItem
+                 << "Error:" << errorText;
 
         m_trans->setErrorDetails(m_trans->errorDetails() % failedItem %
                                  '\n' % errorText % "\n\n");
@@ -115,27 +123,36 @@ void WorkerAcquire::Fail(pkgAcquire::ItemDesc &item)
 
 void WorkerAcquire::Stop()
 {
+    qDebug() << "WorkerAcquire::Stop() called";
     m_trans->setProgress(m_progressEnd);
     m_trans->setCancellable(false);
+    qInfo() << "Download stopped, final progress:" << m_progressEnd;
     pkgAcquireStatus::Stop();
 }
 
 bool WorkerAcquire::MediaChange(string Media, string Drive)
 {
+    qDebug() << "Media change requested:" << Media.c_str() << Drive.c_str();
+    
     // Check if frontend can prompt for media
-    if (!(m_trans->frontendCaps() & QApt::MediumPromptCap))
+    if (!(m_trans->frontendCaps() & QApt::MediumPromptCap)) {
+        qWarning() << "Frontend does not support media prompt";
         return false;
+    }
 
     // Notify listeners to the transaction
     m_trans->setMediumRequired(QString::fromUtf8(Media.c_str()),
                                QString::fromUtf8(Drive.c_str()));
     m_trans->setStatus(QApt::WaitingMediumStatus);
+    qInfo() << "Waiting for media:" << Media.c_str();
 
     // Wait until the media is provided or the user cancels
-    while (m_trans->isPaused())
+    while (m_trans->isPaused()) {
         usleep(200000);
+    }
 
     m_trans->setStatus(QApt::DownloadingStatus);
+    qInfo() << "Media change handled, resuming download";
 
     // As long as the user didn't cancel, we're ok to proceed
     return (!m_trans->isCancelled());
@@ -143,10 +160,15 @@ bool WorkerAcquire::MediaChange(string Media, string Drive)
 
 bool WorkerAcquire::Pulse(pkgAcquire *Owner)
 {
-    if (m_trans->isCancelled())
+    if (m_trans->isCancelled()) {
+        qDebug() << "Download cancelled, stopping pulse";
         return false;
+    }
 
     pkgAcquireStatus::Pulse(Owner);
+    qDebug() << "Download pulse - current items:" << CurrentItems
+             << "/" << TotalItems << "bytes:" << CurrentBytes
+             << "/" << TotalBytes;
 
     for (pkgAcquire::Worker *iter = Owner->WorkersBegin(); iter != 0; iter = Owner->WorkerStep(iter)) {
         if (!iter->CurrentItem) {

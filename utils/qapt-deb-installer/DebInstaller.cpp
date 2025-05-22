@@ -53,7 +53,9 @@ DebInstaller::DebInstaller(QWidget *parent, const QString &debFile)
     , m_cancelButton(new QPushButton(this))
     , m_buttonBox(new QDialogButtonBox(this))
 {
-    if (!m_backend->init())
+    qDebug() << "Initializing backend";
+    if (!m_backend->init()) {
+        qCritical() << "Backend initialization failed";
         initError();
     QApt::FrontendCaps caps = (QApt::FrontendCaps)(QApt::DebconfCap);
     m_backend->setFrontendCaps(caps);
@@ -102,7 +104,9 @@ void DebInstaller::initGUI()
     m_commitWidget = new DebCommitWidget(this);
     m_stack->addWidget(m_commitWidget);
 
+    qDebug() << "Validating DEB file:" << m_debFile->filePath();
     if (!m_debFile->isValid()) {
+        qWarning() << "Invalid DEB file:" << m_debFile->filePath();
         QString text = i18nc("@label",
                              "Could not open <filename>%1</filename>. It does not appear to be a "
                              "valid Debian package file.", m_debFile->filePath());
@@ -129,6 +133,8 @@ void DebInstaller::initGUI()
 
 void DebInstaller::transactionStatusChanged(QApt::TransactionStatus status)
 {
+    qDebug() << "Transaction status changed to:" << status;
+
     switch (status) {
     case QApt::RunningStatus:
     case QApt::DownloadingStatus:
@@ -168,6 +174,8 @@ void DebInstaller::errorOccurred(QApt::ErrorCode error)
 
 void DebInstaller::installDebFile()
 {
+    qDebug() << "Starting installation of DEB file:" << m_debFile->packageName();
+
     m_applyButton->setEnabled(false);
     m_cancelButton->setEnabled(false);
 
@@ -201,13 +209,17 @@ void DebInstaller::setupTransaction(QApt::Transaction *trans)
 
 bool DebInstaller::checkDeb()
 {
+    qDebug() << "Checking DEB package dependencies and conflicts";
+
     QStringList arches = m_backend->architectures();
     arches.append(QLatin1String("all"));
     QString debArch = m_debFile->architecture();
 
     // Check if we support the arch at all
     if (debArch != m_backend->nativeArchitecture()) {
+        qDebug() << "Checking architecture compatibility:" << debArch;
         if (!arches.contains(debArch)) {
+            qWarning() << "Unsupported architecture:" << debArch;
             // Wrong arch
             m_statusString = i18nc("@info", "Error: Wrong architecture '%1'", debArch);
             m_statusString.prepend(QLatin1String("<font color=\"#ff0000\">"));
@@ -319,6 +331,8 @@ QString DebInstaller::maybeAppendArchSuffix(const QString &pkgName, bool checkin
 
 QApt::PackageList DebInstaller::checkConflicts()
 {
+    qDebug() << "Checking for package conflicts";
+
     QApt::PackageList conflictingPackages;
     QList<QApt::DependencyItem> conflicts = m_debFile->conflicts();
 
@@ -358,6 +372,8 @@ QApt::PackageList DebInstaller::checkConflicts()
 
 QApt::Package *DebInstaller::checkBreaksSystem()
 {
+    qDebug() << "Checking if package would break system";
+
     QApt::PackageList systemPackages = m_backend->availablePackages();
     std::string debVer = m_debFile->version().toStdString();
 
@@ -406,6 +422,8 @@ QApt::Package *DebInstaller::checkBreaksSystem()
 
 bool DebInstaller::satisfyDepends()
 {
+    qDebug() << "Checking package dependencies";
+
     QApt::Package *pkg = 0;
     QString packageName;
 

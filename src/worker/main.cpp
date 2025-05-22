@@ -19,10 +19,15 @@
  ***************************************************************************/
 
 #include "workerdaemon.h"
+#include <QDebug>
 
 int main(int argc, char **argv)
 {
+    qDebug() << "Starting qapt-worker daemon";
     WorkerDaemon daemon(argc, argv);
+    qDebug() << "qapt-worker daemon initialized";
 
-    return daemon.exec();
+    int ret = daemon.exec();
+    qDebug() << "qapt-worker daemon exiting with code:" << ret;
+    return ret;
 }

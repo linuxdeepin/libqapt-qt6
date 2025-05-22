@@ -21,6 +21,7 @@
 #include "cache.h"
 
 #include <QCoreApplication>
+#include <QDebug>
 
 #include <apt-pkg/cachefile.h>
 
@@ -50,6 +51,7 @@ Cache::Cache(QObject* parent)
         : QObject(parent)
         , d_ptr(new CachePrivate)
 {
+    qDebug() << "Cache object created";
 }
 
 Cache::~Cache()
@@ -60,26 +62,30 @@ Cache::~Cache()
 bool Cache::open()
 {
     Q_D(Cache);
+    qDebug() << "Opening APT cache";
 
     // Close cache in case it's been opened
     d->cache->Close();
     d->trustCache->clear();
+    qDebug() << "Previous cache closed and trust cache cleared";
 
     // Build the cache, return whether it opened
-    return d->cache->ReadOnlyOpen();
+    bool result = d->cache->ReadOnlyOpen();
+    qDebug() << "Cache open result:" << result;
+    return result;
 }
 
 pkgDepCache *Cache::depCache() const
 {
     Q_D(const Cache);
-
+    qDebug() << "Accessing dependency cache";
     return *d->cache;
 }
 
 pkgSourceList *Cache::list() const
 {
     Q_D(const Cache);
-
+    qDebug() << "Accessing source list";
     return d->cache->GetSourceList();
 }
 

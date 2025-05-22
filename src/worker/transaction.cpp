@@ -25,6 +25,7 @@
 #include <QTimer>
 #include <QUuid>
 #include <QDBusConnection>
+#include <QDebug>
 
 // Own includes
 #include "qaptauthorization.h"
@@ -37,6 +38,7 @@
 Transaction::Transaction(TransactionQueue *queue, int userId)
     : Transaction(queue, userId, QApt::EmptyRole, QVariantMap())
 {
+    qDebug() << "Transaction created with empty role";
 }
 
 Transaction::Transaction(TransactionQueue *queue, int userId,
@@ -72,8 +74,11 @@ Transaction::Transaction(TransactionQueue *queue, int userId,
     tid.remove('{').remove('}').remove('-');
     m_tid = "/org/kubuntu/qaptworker/transaction" + tid;
 
-    if (!connection.registerObject(m_tid, this))
+    if (!connection.registerObject(m_tid, this)) {
         qWarning() << "Unable to register transaction on DBus";
+    } else {
+        qDebug() << "Transaction registered on DBus with path:" << m_tid;
+    }
 
     m_roleActionMap[QApt::EmptyRole] = QString("");
     m_roleActionMap[QApt::UpdateCacheRole] = dbusActionUri("updatecache");
@@ -91,6 +96,7 @@ Transaction::Transaction(TransactionQueue *queue, int userId,
 
 Transaction::~Transaction()
 {
+    qDebug() << "Destroying transaction" << m_tid;
     QDBusConnection::systemBus().unregisterObject(m_tid);
 }
 
@@ -136,6 +142,7 @@ int Transaction::status()
 void Transaction::setStatus(QApt::TransactionStatus status)
 {
     QMutexLocker lock(&m_dataMutex);
+    qDebug() << "Transaction status changed from" << m_status << "to" << status;
     m_status = status;
     emit propertyChanged(QApt::StatusProperty, QDBusVariant((int)status));
 
@@ -156,6 +163,7 @@ int Transaction::error()
 
 void Transaction::setError(QApt::ErrorCode code)
 {
+    qWarning() << "Transaction error set:" << code;
     m_error = code;
     emit propertyChanged(QApt::ErrorProperty, QDBusVariant((int)code));
 }
@@ -279,6 +287,7 @@ int Transaction::exitStatus()
 void Transaction::setExitStatus(QApt::ExitStatus exitStatus)
 {
     QMutexLocker lock(&m_dataMutex);
+    qInfo() << "Transaction exit status set:" << exitStatus;
 
     m_exitStatus = exitStatus;
     emit propertyChanged(QApt::ExitStatusProperty, QDBusVariant(exitStatus));
@@ -352,7 +361,9 @@ int Transaction::progress()
 void Transaction::setProgress(int progress)
 {
     QMutexLocker lock(&m_dataMutex);
-
+    if (progress != m_progress) {
+        qDebug() << "Progress updated:" << progress << "%";
+    }
     m_progress = progress;
     emit propertyChanged(QApt::ProgressProperty, QDBusVariant(progress));
 }
@@ -490,13 +501,16 @@ int Transaction::frontendCaps() const
 
 void Transaction::run()
 {
+    qDebug() << "Transaction::run() called";
     if (isForeignUser() || !authorizeRun()) {
+        qWarning() << "Access denied for transaction run";
         sendErrorReply(QDBusError::AccessDenied);
         return;
     }
 
     QMutexLocker lock(&m_dataMutex);
     m_queue->enqueue(m_tid);
+    qInfo() << "Transaction enqueued with ID:" << m_tid;
     setStatus(QApt::WaitingStatus);
 }
 

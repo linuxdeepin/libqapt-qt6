@@ -126,6 +126,7 @@ QList<DependencyItem> DependencyInfo::parseDepends(const QString &field, Depende
         //  - ParseRestrcitionList is whether a restriction "foo <!stage1>" should
         //    return a nullptr if the apt config "APT::Build-Profiles" is
         //    set to that restriction.
+        qDebug() << "Parsing next dependency from position:" << (start - fieldStr.c_str());
         start = debListParser::ParseDepends(start,
                                             stop,
                                             package,
@@ -166,16 +167,19 @@ QList<DependencyItem> DependencyInfo::parseDepends(const QString &field, Depende
 
 QString DependencyInfo::packageName() const
 {
+    qDebug() << "Accessed package name:" << d->packageName;
     return d->packageName;
 }
 
 QString DependencyInfo::packageVersion() const
 {
+    qDebug() << "Accessed package version:" << d->packageVersion;
     return d->packageVersion;
 }
 
 RelationType DependencyInfo::relationType() const
 {
+    qDebug() << "Accessed relation type:" << d->relationType;
     return d->relationType;
 }
 
@@ -191,7 +195,9 @@ QString DependencyInfo::multiArchAnnotation() const
 
 QString DependencyInfo::typeName(DependencyType type)
 {
-    return QString::fromUtf8(pkgCache::DepType(type));
+    QString name = QString::fromUtf8(pkgCache::DepType(type));
+    qDebug() << "Converted dependency type" << type << "to name:" << name;
+    return name;
 }
 
 }

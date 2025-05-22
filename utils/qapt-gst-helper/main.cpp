@@ -22,6 +22,7 @@
 
 #include <QApplication>
 #include <QCommandLineParser>
+#include <QDebug>
 #include <QIcon>
 
 #include <KAboutData>
@@ -37,6 +38,7 @@ static const char version[] = CMAKE_PROJECT_VERSION;
 
 int main(int argc, char **argv)
 {
+    qDebug() << "Entering main function";
     QApplication app(argc, argv);
     app.setWindowIcon(QIcon::fromTheme("applications-other"));
 
@@ -74,6 +76,7 @@ int main(int argc, char **argv)
     GError *error = nullptr;
     gst_init_check(&argc, &argv, &error);
     if (error) {
+        qWarning() << "GStreamer initialization failed:" << error->message;
         // TODO: we should probably show an error message. API documention suggests
         // so at least. Then again explaining random init errors to the user
         // might be a bit tricky.
@@ -81,15 +84,19 @@ int main(int argc, char **argv)
         return GST_INSTALL_PLUGINS_ERROR;
     }
 
+    qDebug() << "GStreamer initialized successfully";
     // do not restore!
     if (app.isSessionRestored()) {
+        qDebug() << "Session restored - exiting";
         exit(0);
     }
 
     int winId = parser.value(transientOption).toInt();
     QStringList details = parser.positionalArguments();
 
+    qDebug() << "Command line arguments parsed - winId:" << winId << "details:" << details;
     PluginHelper pluginHelper(0, details, winId);
+    qDebug() << "Starting plugin helper execution";
     pluginHelper.run();
 
     return app.exec();

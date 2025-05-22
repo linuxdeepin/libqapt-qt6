@@ -39,12 +39,16 @@ public:
         : sourceFiles(QStringList())
         , list(QHash<QString,QApt::SourceEntryList>())
     {
+        qDebug() << "Initializing sources list";
         if ( sourcesList.isEmpty() ) {
+            qDebug() << "Using default sources files";
             setDefaultSourcesFiles();
         } else {
+            qDebug() << "Using custom sources list:" << sourcesList;
             addSourcesFileList(sourcesList);
         }
         reload();
+        qDebug() << "Sources list initialized with" << list.size() << "entries";
     }
 
     // File list
@@ -83,15 +87,23 @@ void SourcesListPrivate::addSourcesFileList(const QStringList& filePathList)
 
 void SourcesListPrivate::setDefaultSourcesFiles()
 {
-    addSourcesFile(QString::fromStdString(_config->FindFile("Dir::Etc::sourcelist")));
+    QString mainSourceFile = QString::fromStdString(_config->FindFile("Dir::Etc::sourcelist"));
+    qDebug() << "Adding main sources file:" << mainSourceFile;
+    addSourcesFile(mainSourceFile);
 
     // Go through the parts dir and append those
-    QDir partsDir(QString::fromStdString(_config->FindFile("Dir::Etc::sourceparts")));
-    for (const QString& file : partsDir.entryList(QStringList() << "*.list")) {
-        addSourcesFile(partsDir.filePath(file));
+    QString partsDirPath = QString::fromStdString(_config->FindFile("Dir::Etc::sourceparts"));
+    qDebug() << "Scanning source parts directory:" << partsDirPath;
+    QDir partsDir(partsDirPath);
+    
+    QStringList partsFiles = partsDir.entryList(QStringList() << "*.list");
+    qDebug() << "Found" << partsFiles.size() << "source parts files";
+    
+    for (const QString& file : partsFiles) {
+        QString filePath = partsDir.filePath(file);
+        qDebug() << "Adding source part file:" << filePath;
+        addSourcesFile(filePath);
     }
-
-    return;
 }
 
 void SourcesListPrivate::reload()
@@ -107,6 +119,7 @@ void SourcesListPrivate::reload()
 
 void SourcesListPrivate::load(const QString &filePath)
 {
+    qDebug() << "Loading source file:" << filePath;
     QFile file(filePath);
 
     if (!file.open(QFile::Text | QIODevice::ReadOnly)) {
@@ -114,11 +127,13 @@ void SourcesListPrivate::load(const QString &filePath)
         return;
     }
 
+    int entryCount = 0;
     // Make a source entry for each line in the file
     while (!file.atEnd()) {
         QString line = file.readLine();
         list[filePath].append(SourceEntry(line, filePath));
     }
+    qDebug() << "Loaded" << entryCount << "valid entries from" << filePath;
 }
 
 SourcesList::SourcesList(QObject *parent)
@@ -178,22 +193,26 @@ void SourcesList::reload()
 void SourcesList::addEntry(const SourceEntry &entry)
 {
     Q_D(SourcesList);
+    qDebug() << "Adding source entry:" << entry.toString();
 
     QString entryForFile = entry.file();
 
     // Default to the zeroth file if no file is specified.
     if (entryForFile.isEmpty()) {
         entryForFile = sourceFiles().at(0);
+        qDebug() << "Using default source file:" << entryForFile;
     }
 
     // TODO: More sophisticated dupe checking, e.g. in the case of adding new components
     for (const SourceEntry &item : entries(entryForFile)) {
         if (entry == item) {
+            qDebug() << "Duplicate entry found, skipping";
             return;
         }
     }
 
     d->list[entryForFile].append(entry);
+    qDebug() << "Entry added to" << entryForFile;
 }
 
 void SourcesList::removeEntry(const SourceEntry &entry)
@@ -267,11 +286,16 @@ QString SourcesList::toString() const
 void SourcesList::save()
 {
     Q_D(SourcesList);
+    qDebug() << "Saving all source files";
 
     for (const QString &sourceFile : sourceFiles()) {
-        qDebug() << "Writing file " << sourceFile << " with: " << dataForSourceFile(sourceFile);
-        if (! d->worker->writeFileToDisk(dataForSourceFile(sourceFile), sourceFile)) {
-            qWarning() << "Failed to write the file to disk (dbus call failed)!";
+        QString data = dataForSourceFile(sourceFile);
+        qDebug() << "Writing" << data.count('\n') << "lines to" << sourceFile;
+        
+        if (!d->worker->writeFileToDisk(data, sourceFile)) {
+            qWarning() << "Failed to write file:" << sourceFile;
+        } else {
+            qDebug() << "Successfully saved:" << sourceFile;
         }
     }
 }

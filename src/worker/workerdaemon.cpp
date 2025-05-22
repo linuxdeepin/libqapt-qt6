@@ -43,8 +43,10 @@ WorkerDaemon::WorkerDaemon(int &argc, char **argv)
     , m_worker(nullptr)
     , m_workerThread(nullptr)
 {
+    qDebug() << "Initializing WorkerDaemon";
     m_worker = new AptWorker(nullptr);
     m_queue = new TransactionQueue(this, m_worker);
+    qDebug() << "Worker and queue initialized";
 
     m_workerThread = new QThread(this);
     m_worker->moveToThread(m_workerThread);
@@ -64,16 +66,18 @@ WorkerDaemon::WorkerDaemon(int &argc, char **argv)
 
     if (!QDBusConnection::systemBus().registerService(QLatin1String(s_workerReverseDomainName))) {
         // Another worker is already here, quit
+        qCritical() << "Failed to register DBus service:" << QDBusConnection::systemBus().lastError().message();
         QTimer::singleShot(0, QCoreApplication::instance(), SLOT(quit()));
-        qWarning() << "Couldn't register service" << QDBusConnection::systemBus().lastError().message();
         return;
     }
+    qInfo() << "DBus service registered successfully";
 
     if (!QDBusConnection::systemBus().registerObject(QLatin1String("/"), this)) {
+        qCritical() << "Failed to register DBus object";
         QTimer::singleShot(0, QCoreApplication::instance(), SLOT(quit()));
-        qWarning() << "Couldn't register object";
         return;
     }
+    qDebug() << "DBus object registered successfully";
 
     // Quit if we've not run a job for a while
     m_idleTimer = new QTimer(this);
@@ -84,9 +88,14 @@ WorkerDaemon::WorkerDaemon(int &argc, char **argv)
 void WorkerDaemon::checkIdle()
 {
     quint64 currentTime = QDateTime::currentMSecsSinceEpoch();
+    quint64 idleTime = currentTime - m_worker->lastActiveTimestamp();
+    
+    qDebug() << "Checking idle status - last active:" << idleTime << "ms ago";
+    
     if (!m_worker->currentTransaction() &&
-        currentTime - m_worker->lastActiveTimestamp() > IDLE_TIMEOUT &&
+        idleTime > IDLE_TIMEOUT &&
         m_queue->isEmpty()) {
+        qInfo() << "Worker idle for" << idleTime << "ms, shutting down";
         m_worker->quit();
     }
 }
@@ -99,10 +108,12 @@ int WorkerDaemon::dbusSenderUid() const
 Transaction *WorkerDaemon::createTransaction(QApt::TransactionRole role, QVariantMap instructionsList)
 {
     int uid = dbusSenderUid();
+    qDebug() << "Creating transaction for UID:" << uid << "Role:" << role;
 
     // Create a transaction. It will add itself to the queue
     Transaction *trans = new Transaction(m_queue, uid, role, instructionsList);
     trans->setService(message().service());
+    qDebug() << "Transaction created with ID:" << trans->transactionId();
 
     return trans;
 }
@@ -155,7 +166,7 @@ QString WorkerDaemon::downloadArchives(const QStringList &packageNames, const QS
 bool WorkerDaemon::writeFileToDisk(const QString &contents, const QString &path)
 {
     if (!QApt::Auth::authorize(dbusActionUri("writefiletodisk"), message().service())) {
-        qDebug() << "Failed to authorize!!";
+        qWarning() << "Authorization failed for writeFileToDisk";
         return false;
     }
 
@@ -166,7 +177,7 @@ bool WorkerDaemon::writeFileToDisk(const QString &contents, const QString &path)
         return true;
     }
 
-    qDebug() << "Failed to write file to disk: " << file.errorString();
+    qWarning() << "Failed to write file to disk:" << file.errorString();
     return false;
 }
 

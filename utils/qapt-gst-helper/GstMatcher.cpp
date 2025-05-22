@@ -29,6 +29,7 @@
 
 GstMatcher::GstMatcher(const PluginInfo *info)
 {
+    qDebug() << "Initializing GstMatcher with plugin type:" << info->pluginType();
     m_aptTypes = QVector<QString>(6);
     m_aptTypes[PluginInfo::InvalidType] = QLatin1String("");
     m_aptTypes[PluginInfo::Encoder] = QLatin1String("Gstreamer-Encoders");
@@ -46,8 +47,10 @@ GstMatcher::~GstMatcher()
 
 bool GstMatcher::matches(QApt::Package *package)
 {
+    qDebug() << "Checking package match:" << package->name();
     // Reject already-installed packages
     if (package->isInstalled())
+        qDebug() << "Package already installed - skipping:" << package->name();
         return false;
 
     // There is a bug in Ubuntu (and supposedly Debian) where it lists an incorrect
@@ -55,6 +58,7 @@ bool GstMatcher::matches(QApt::Package *package)
     // to force strict matching, use export QAPT_GST_STRICT_VERSION_MATCH=1.
     if (!qgetenv("QAPT_GST_STRICT_VERSION_MATCH").isEmpty()) {
         if (package->controlField(QLatin1String("Gstreamer-Version")) != m_info->version())
+            qDebug() << "Strict version mismatch:" << package->controlField(QLatin1String("Gstreamer-Version")) << "!=" << m_info->version();
             return false;
     } else {
         // Excitingly silly code following...
@@ -62,10 +66,12 @@ bool GstMatcher::matches(QApt::Package *package)
         QString packageVersion = package->controlField(QLatin1String("Gstreamer-Version"));
 
         if (packageVersion.isEmpty()) // No version, discard.
+            qDebug() << "Empty Gstreamer-Version field - skipping package:" << package->name();
             return false;
 
         QStringList packageVersionFields = packageVersion.split(QChar('.'));
         if (packageVersionFields.size() != 2) // must be x.y or we don't consider it a valid API version number.
+            qDebug() << "Invalid version format:" << packageVersion << "expected x.y format";
             return false;
 
         QStringList infoVersionFields = m_info->version().split(QChar('.'));
@@ -101,8 +107,10 @@ bool GstMatcher::matches(QApt::Package *package)
     QString typeName = m_aptTypes[m_info->pluginType()];
     QString typeData = package->controlField(typeName);
 
-    if (typeData.isEmpty())
+    if (typeData.isEmpty()) {
+        qDebug() << "Empty type data for" << typeName << "in package:" << package->name();
         return false;
+    }
 
     // We are handling gobjects that need cleanup, so we'll do a delayed return.
     bool ret = false;
@@ -127,6 +135,7 @@ bool GstMatcher::matches(QApt::Package *package)
 
     gst_caps_unref(pluginCaps);
     gst_caps_unref(packageCaps);
+    qDebug() << "Match result for" << package->name() << ":" << ret;
     return ret;
 }
 

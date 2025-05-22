@@ -19,6 +19,7 @@
  ***************************************************************************/
 
 #include "markingerrorinfo.h"
+#include <QDebug>
 
 namespace QApt {
 
@@ -48,11 +49,14 @@ public:
 MarkingErrorInfo::MarkingErrorInfo()
     : d(new MarkingErrorInfoPrivate())
 {
+    qDebug() << "Created empty marking error info";
 }
 
 MarkingErrorInfo::MarkingErrorInfo(BrokenReason reason, const DependencyInfo &info)
     : d(new MarkingErrorInfoPrivate(reason, info))
 {
+    qDebug() << "Created marking error info with reason:" << reason
+             << "for package:" << info.packageName();
 }
 
 MarkingErrorInfo::MarkingErrorInfo(const MarkingErrorInfo &other)
@@ -76,11 +80,13 @@ MarkingErrorInfo &MarkingErrorInfo::operator=(const MarkingErrorInfo &rhs)
 
 BrokenReason MarkingErrorInfo::errorType() const
 {
+    qDebug() << "Accessed marking error type:" << d->errorType;
     return d->errorType;
 }
 
 DependencyInfo MarkingErrorInfo::errorInfo() const
 {
+    qDebug() << "Accessed marking error info for package:" << d->errorInfo.packageName();
     return d->errorInfo;
 }
 

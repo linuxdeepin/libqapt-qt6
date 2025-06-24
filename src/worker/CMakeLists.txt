@@ -1,18 +1,17 @@
-set(WORKER_NAME qaptworker${QAPT_WORKER_VERSION}-qt6)
-set(WORKER_RDN_VERSIONED ${QAPT_WORKER_RDN_VERSIONED}-qt6)
+set(WORKER_NAME qapt6worker${QAPT_WORKER_VERSION})
 
 configure_file(org.kubuntu.qaptworker.transaction.xml.cmake
     ${CMAKE_CURRENT_BINARY_DIR}/${QAPT_WORKER_RDN_VERSIONED}.transaction.xml)
 configure_file(org.kubuntu.qaptworker.xml.cmake
     ${CMAKE_CURRENT_BINARY_DIR}/${QAPT_WORKER_RDN_VERSIONED}.xml)
 configure_file(org.kubuntu.qaptworker.service.cmake
-    ${CMAKE_CURRENT_BINARY_DIR}/${WORKER_RDN_VERSIONED}.service)
+    ${CMAKE_CURRENT_BINARY_DIR}/${QAPT_WORKER_RDN_VERSIONED}.service)
 configure_file(qaptworker.actions.cmake
-    ${CMAKE_CURRENT_BINARY_DIR}/${WORKER_RDN_VERSIONED}.actions)
+    ${CMAKE_CURRENT_BINARY_DIR}/${QAPT_WORKER_RDN_VERSIONED}.actions)
 configure_file(org.kubuntu.qaptworker.policy.cmake
-    ${CMAKE_CURRENT_BINARY_DIR}/${WORKER_RDN_VERSIONED}.policy)
+    ${CMAKE_CURRENT_BINARY_DIR}/${QAPT_WORKER_RDN_VERSIONED}.policy)
 configure_file(org.kubuntu.qaptworker.conf.cmake
-    ${CMAKE_CURRENT_BINARY_DIR}/${WORKER_RDN_VERSIONED}.conf)
+    ${CMAKE_CURRENT_BINARY_DIR}/${QAPT_WORKER_RDN_VERSIONED}.conf)
 configure_file(urihelper.h.cmake
     ${CMAKE_CURRENT_BINARY_DIR}/urihelper.h)
 
@@ -83,15 +82,15 @@ if (NOT DEFINED SYSCONF_INSTALL_DIR)
     set(SYSCONF_INSTALL_DIR "/etc")
 endif()
 
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${WORKER_RDN_VERSIONED}.service
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${QAPT_WORKER_RDN_VERSIONED}.service
         DESTINATION ${DBUS_SYSTEM_SERVICES_INSTALL_DIR})
 
 if(KF5Auth_FOUND)
-    kauth_install_actions(${QAPT_WORKER_RDN_VERSIONED} ${CMAKE_CURRENT_BINARY_DIR}/${WORKER_RDN_VERSIONED}.actions)
+    kauth_install_actions(${QAPT_WORKER_RDN_VERSIONED} ${CMAKE_CURRENT_BINARY_DIR}/${QAPT_WORKER_RDN_VERSIONED}.actions)
 else()
-    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${WORKER_RDN_VERSIONED}.policy
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${QAPT_WORKER_RDN_VERSIONED}.policy
         DESTINATION ${CMAKE_INSTALL_PREFIX}/share/polkit-1/actions)
 endif()
 
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${WORKER_RDN_VERSIONED}.conf
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${QAPT_WORKER_RDN_VERSIONED}.conf
     DESTINATION ${SYSCONF_INSTALL_DIR}/dbus-1/system.d/)

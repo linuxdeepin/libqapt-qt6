@@ -78,7 +78,6 @@ bool Cache::open()
 pkgDepCache *Cache::depCache() const
 {
     Q_D(const Cache);
-    qDebug() << "Accessing dependency cache";
     return *d->cache;
 }
 

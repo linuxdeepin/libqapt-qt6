@@ -193,7 +193,6 @@ bool PackagePrivate::setInUpdatePhase(bool inUpdatePhase)
 Package::Package(QApt::Backend* backend, pkgCache::PkgIterator &packageIter)
         : d(new PackagePrivate(packageIter, backend))
 {
-    qDebug() << "Created package object for:" << QLatin1String(packageIter.Name());
 }
 
 Package::~Package()
@@ -208,7 +207,6 @@ const pkgCache::PkgIterator &Package::packageIterator() const
 
 QLatin1String Package::name() const
 {
-    qDebug() << "Accessed package name:" << QLatin1String(d->packageIter.Name());
     return QLatin1String(d->packageIter.Name());
 }
 

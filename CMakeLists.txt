@@ -45,7 +45,7 @@ ecm_setup_version(${PROJECT_VERSION} VARIABLE_PREFIX QAPT
                   SOVERSION ${PROJECT_SOVERSION})
 
 set(QAPT_WORKER_VERSION ${PROJECT_SOVERSION})
-set(QAPT_WORKER_RDN org.kubuntu.qaptworker)
+set(QAPT_WORKER_RDN org.kubuntu.qapt6worker)
 set(QAPT_WORKER_RDN_VERSIONED ${QAPT_WORKER_RDN}${QAPT_WORKER_VERSION})
 
 # For forwarding into C++ convert them into properly excaped strings.

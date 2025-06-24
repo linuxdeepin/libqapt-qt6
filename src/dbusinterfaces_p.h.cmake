@@ -13,7 +13,7 @@ static const char s_workerReverseDomainName[] = @QAPT_WORKER_RDN_VERSIONED_STRIN
 
 // This will fail regardless of whether the var is present or not as this is
 // hard typed anyway.
-typedef OrgKubuntuQaptworker@QAPT_WORKER_VERSION@Interface WorkerInterface;
-typedef OrgKubuntuQaptworker@QAPT_WORKER_VERSION@TransactionInterface TransactionInterface;
+typedef OrgKubuntuQapt6worker@QAPT_WORKER_VERSION@Interface WorkerInterface;
+typedef OrgKubuntuQapt6worker@QAPT_WORKER_VERSION@TransactionInterface TransactionInterface;
 
 #endif // QAPT_DBUSINTERFACES_P_H

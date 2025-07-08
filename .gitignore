@@ -1,4 +1,5 @@
 .pc/
+CMakeLists.txt.user
 
 # build output
 build/

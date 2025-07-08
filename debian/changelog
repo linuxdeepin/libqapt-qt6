@@ -1,3 +1,9 @@
+libqapt-qt6 (3.0.9) unstable; urgency=medium
+
+  * fix: Failed to install the software package
+
+ -- Liu Zhangjian <liuzhangjian@uniontech.com>  Tue, 08 Jul 2025 15:46:00 +0800
+
 libqapt-qt6 (3.0.8) unstable; urgency=medium
 
   * fix bug

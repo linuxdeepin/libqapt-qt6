@@ -1053,6 +1053,32 @@ QMap<QString, QString> Package::providesListEnhance() const
    return provides;
 }
 
+QStringList Package::reverseProvidesList() const
+{
+    QStringList reverseProvidesList;
+
+    // Iterate over all packages that provide this package
+    for (pkgCache::PrvIterator Prv = d->packageIter.ProvidesList(); !Prv.end(); ++Prv) {
+        reverseProvidesList << QLatin1String(Prv.OwnerPkg().Name());
+    }
+
+    return reverseProvidesList;
+}
+
+QMap<QString, QString> Package::reverseProvidesListEnhance() const
+{
+    QMap<QString, QString> reverseProvides;
+
+    // Iterate over all packages that provide this package
+    for (pkgCache::PrvIterator Prv = d->packageIter.ProvidesList(); !Prv.end(); ++Prv) {
+        QString providerName = QLatin1String(Prv.OwnerPkg().Name());
+        QString provideVersion = QLatin1String(Prv.ProvideVersion());
+        reverseProvides.insert(providerName, provideVersion);
+    }
+
+    return reverseProvides;
+}
+
 QStringList Package::recommendsList() const
 {
     QStringList recommends;

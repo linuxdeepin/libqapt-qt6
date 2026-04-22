@@ -181,7 +181,7 @@ public:
     QString priority() const;
 
    /**
-    * Returns the files that this package has installed. 
+    * Returns the files that this package has installed.
     *
     * \return The file list of the package. If the package is not installed, it
     *         will return an empty list.
@@ -266,7 +266,7 @@ public:
     *
     * This function can be used to return data from custom control fields
     * which do not have an official function inside APT to retrieve them.
-    * 
+    *
     * For example, the supportedUntil() function uses this function to
     * retrieve the value of the "Supported" field, which is Ubuntu-specific
     * and does not have an APT function with which to obtain it.
@@ -502,6 +502,26 @@ public:
      * \return A \c QMap<QString, QString> of packages that this package provides and versions.
      */
     QMap<QString, QString> providesListEnhance() const;
+
+    /**
+     * Returns a list of the names of all the packages that provide this package.
+     * (Reverse provides)
+     *
+     * \return A \c QStringList of packages that provide this package
+     *
+     * @since 3.0.10
+     */
+    QStringList reverseProvidesList() const;
+
+    /**
+     * Returns a map of packages that provide this package with their versions.
+     * (Reverse provides with version info)
+     *
+     * \return A \c QMap<QString, QString> where keys are package names and values are the versions they provide
+     *
+     * @since 3.0.10
+     */
+    QMap<QString, QString> reverseProvidesListEnhance() const;
 
    /**
     * Returns a list of the names of all the packages that this package recommends.

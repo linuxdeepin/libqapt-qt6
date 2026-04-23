@@ -1,3 +1,10 @@
+libqapt-qt6 (3.0.10) unstable; urgency=medium
+
+  * fix: support en_US of polkit policy
+  * feat: add reverse provides lookup methods
+
+ -- Liu Zhangjian <liuzhangjian@uniontech.com>  Thu, 23 Apr 2026 18:24:34 +0800
+
 libqapt-qt6 (3.0.9) unstable; urgency=medium
 
   * fix: Failed to install the software package
